@@ -127,6 +127,15 @@ public class PlayerController : MonoBehaviour, PlayerAction.IPlayerActions
             Collider[] colliders = Physics.OverlapBox(boxCenter, boxHalfExtents, transform.rotation);
             foreach (Collider hit in colliders)
             {
+                ElevatorButton elevatorButton = hit.GetComponent<ElevatorButton>();
+                if (elevatorButton != null)
+                {
+                    elevatorButton.PressButton();
+                    Debug.Log("Elevator button pressed: " + hit.gameObject.name);
+                    switchFound = true;
+                    break;
+                }
+
                 SwitchNode switchNode = hit.GetComponent<SwitchNode>();
                 if (switchNode != null)
                 {
