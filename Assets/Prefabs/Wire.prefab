@@ -130,4 +130,5 @@ MonoBehaviour:
   isPowered: 0
   isSwitchOn: 0
   connectedNodes: []
-  connectRadius: 2
+  connectRadius: 1.1
+  maxGridConnectionDistance: 1.1
