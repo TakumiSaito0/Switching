@@ -22,6 +22,7 @@ public class PlayerController : MonoBehaviour, PlayerAction.IPlayerActions
     public float interactDistance = 2.0f;
     public float placeDistance = 1.2f;
     public float placeHeightOffset = 0.5f;
+    public LayerMask placeGroundLayers = ~0;
     public GameObject wirePrefab;
 
     [HideInInspector]
@@ -33,6 +34,8 @@ public class PlayerController : MonoBehaviour, PlayerAction.IPlayerActions
     private Vector2 moveInput;
     private Rigidbody heldRigidbody;
     private Rigidbody rb;
+
+    public bool IsHoldingObject => heldRigidbody != null;
 
     private void Awake()
     {
@@ -161,7 +164,21 @@ public class PlayerController : MonoBehaviour, PlayerAction.IPlayerActions
             Vector3 frontPos = transform.position + transform.forward * placeDistance;
             float gridX = Mathf.Round(frontPos.x);
             float gridZ = Mathf.Round(frontPos.z);
-            Vector3 placePos = new Vector3(gridX, placeHeightOffset, gridZ);
+            Vector3 gridPos = new Vector3(gridX, transform.position.y, gridZ);
+
+            WireNode existingWire = FindWireAtGridPosition(gridPos);
+            if (existingWire != null)
+            {
+                Destroy(existingWire.gameObject);
+                Invoke(nameof(RefreshAllCircuits), 0.05f);
+                return;
+            }
+
+            if (!TryGetGroundedPlacePosition(gridX, gridZ, out Vector3 placePos))
+            {
+                Debug.Log("配置先の地面が見つかりませんでした。");
+                return;
+            }
 
             bool isBlocked = false;
             Collider[] colliders = Physics.OverlapSphere(placePos, 0.4f);
@@ -176,7 +193,8 @@ public class PlayerController : MonoBehaviour, PlayerAction.IPlayerActions
 
             if (!isBlocked)
             {
-                Instantiate(wirePrefab, placePos, Quaternion.identity);
+                GameObject placedCircuit = Instantiate(wirePrefab, placePos, Quaternion.identity);
+                SnapBottomToGround(placedCircuit, placePos.y);
                 Invoke(nameof(RefreshAllCircuits), 0.05f);
             }
             else
@@ -184,6 +202,113 @@ public class PlayerController : MonoBehaviour, PlayerAction.IPlayerActions
                 Debug.Log("そこには既に何かが置かれています。");
             }
         }
+    }
+
+    private WireNode FindWireAtGridPosition(Vector3 gridPos)
+    {
+        Vector3 boxCenter = new Vector3(gridPos.x, gridPos.y + 1f, gridPos.z);
+        Collider[] colliders = Physics.OverlapBox(boxCenter, new Vector3(0.45f, 3f, 0.45f));
+
+        foreach (Collider col in colliders)
+        {
+            WireNode wire = col.GetComponentInParent<WireNode>();
+            if (wire != null)
+            {
+                return wire;
+            }
+        }
+
+        return null;
+    }
+
+    private bool TryGetGroundedPlacePosition(float gridX, float gridZ, out Vector3 placePos)
+    {
+        Vector3 rayOrigin = new Vector3(gridX, transform.position.y + 5f, gridZ);
+        RaycastHit[] hits = Physics.RaycastAll(rayOrigin, Vector3.down, 20f, placeGroundLayers, QueryTriggerInteraction.Ignore);
+
+        float highestGroundY = float.NegativeInfinity;
+        bool foundGround = false;
+
+        foreach (RaycastHit hit in hits)
+        {
+            if (hit.collider.GetComponentInParent<CircuitNode>() != null || hit.collider.CompareTag("Player"))
+            {
+                continue;
+            }
+
+            if (hit.point.y > highestGroundY)
+            {
+                highestGroundY = hit.point.y;
+                foundGround = true;
+            }
+        }
+
+        if (foundGround)
+        {
+            placePos = new Vector3(gridX, highestGroundY, gridZ);
+            return true;
+        }
+
+        placePos = new Vector3(gridX, placeHeightOffset, gridZ);
+        return false;
+    }
+
+    private void SnapBottomToGround(GameObject placedObject, float groundY)
+    {
+        Physics.SyncTransforms();
+
+        Bounds? objectBounds = GetObjectBounds(placedObject);
+        if (!objectBounds.HasValue)
+        {
+            return;
+        }
+
+        float yOffset = groundY - objectBounds.Value.min.y;
+        placedObject.transform.position += Vector3.up * yOffset;
+    }
+
+    private Bounds? GetObjectBounds(GameObject target)
+    {
+        Bounds? combinedBounds = null;
+
+        foreach (Collider col in target.GetComponentsInChildren<Collider>())
+        {
+            if (col == null || !col.enabled)
+            {
+                continue;
+            }
+
+            combinedBounds = EncapsulateBounds(combinedBounds, col.bounds);
+        }
+
+        if (combinedBounds.HasValue)
+        {
+            return combinedBounds;
+        }
+
+        foreach (Renderer renderer in target.GetComponentsInChildren<Renderer>())
+        {
+            if (renderer == null || !renderer.enabled)
+            {
+                continue;
+            }
+
+            combinedBounds = EncapsulateBounds(combinedBounds, renderer.bounds);
+        }
+
+        return combinedBounds;
+    }
+
+    private Bounds? EncapsulateBounds(Bounds? combinedBounds, Bounds bounds)
+    {
+        if (!combinedBounds.HasValue)
+        {
+            return bounds;
+        }
+
+        Bounds expandedBounds = combinedBounds.Value;
+        expandedBounds.Encapsulate(bounds);
+        return expandedBounds;
     }
 
     void RefreshAllCircuits()
@@ -243,6 +368,11 @@ public class PlayerController : MonoBehaviour, PlayerAction.IPlayerActions
         heldRigidbody.transform.SetParent(grabPoint, true);
         heldRigidbody.transform.localPosition = Vector3.zero;
         heldRigidbody.transform.localRotation = Quaternion.identity;
+
+        if (isClimbing)
+        {
+            StopClimbing();
+        }
     }
 
     private void Release()
@@ -260,6 +390,11 @@ public class PlayerController : MonoBehaviour, PlayerAction.IPlayerActions
     // 外部（梯子などのギミック）からプレイヤーを登り状態にするメソッド
     public void StartClimbing()
     {
+        if (IsHoldingObject)
+        {
+            return;
+        }
+
         isClimbing = true;
         if (rb != null)
         {

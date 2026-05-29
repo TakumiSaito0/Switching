@@ -8,7 +8,7 @@ public class Ladder : MonoBehaviour
         PlayerController player = other.GetComponentInParent<PlayerController>();
 
         // プレイヤーであれば、登攀フラグをオンにする
-        if (player != null)
+        if (player != null && !player.IsHoldingObject)
         {
             player.StartClimbing();
         }
