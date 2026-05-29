@@ -19,6 +19,24 @@ public class CircuitNode : MonoBehaviour
         OnPowerChanged(isPowered);
     }
 
+    protected virtual void OnDestroy()
+    {
+        if (CircuitManager.Instance == null)
+        {
+            return;
+        }
+
+        CircuitManager.Instance.allNodes.Remove(this);
+
+        foreach (CircuitNode node in CircuitManager.Instance.allNodes)
+        {
+            if (node != null)
+            {
+                node.connectedNodes.Remove(this);
+            }
+        }
+    }
+
     public virtual void ConnectToNeighbors()
     {
         connectedNodes.Clear();
