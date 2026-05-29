@@ -19,7 +19,7 @@ public class CameraManager : MonoBehaviour
 
         if (focus == null)
         {
-            PlayerController player = FindFirstObjectByType<PlayerController>();
+            PlayerController player = FindAnyObjectByType<PlayerController>();
             if (player != null)
             {
                 focus = player.transform;
