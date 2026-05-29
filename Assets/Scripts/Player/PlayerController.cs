@@ -37,6 +37,10 @@ public class PlayerController : MonoBehaviour, PlayerAction.IPlayerActions
 
     public bool IsHoldingObject => heldRigidbody != null;
 
+    private Vector3? lastTargetGridPos = null;
+    private bool isPlacingMode = false;
+    private bool isDeletingMode = false;
+
     private void Awake()
     {
         rb = GetComponent<Rigidbody>();
@@ -119,7 +123,11 @@ public class PlayerController : MonoBehaviour, PlayerAction.IPlayerActions
         // 通常の地上移動
         if (move.sqrMagnitude > 0f)
         {
-            transform.rotation = Quaternion.LookRotation(move, Vector3.up);
+            // 右クリックを押しっぱなしの時は向きを変えず平行移動のみにする
+            if (!Mouse.current.rightButton.isPressed)
+            {
+                transform.rotation = Quaternion.LookRotation(move, Vector3.up);
+            }
         }
 
         transform.position += move * moveSpeed * Time.deltaTime;
@@ -197,55 +205,104 @@ public class PlayerController : MonoBehaviour, PlayerAction.IPlayerActions
         }
     }
 
-    // 右クリック: 地面に回路(ワイヤー)を設置する
+    // 右クリック: 地面に回路(ワイヤー)を設置・削除する
     void PlaceCircuit()
     {
-        if (Mouse.current.rightButton.wasPressedThisFrame && wirePrefab != null)
+        // 押されていない場合は記録とモードをリセットする
+        if (!Mouse.current.rightButton.isPressed)
+        {
+            lastTargetGridPos = null;
+            isPlacingMode = false;
+            isDeletingMode = false;
+            return;
+        }
+
+        if (wirePrefab != null)
         {
             Vector3 frontPos = transform.position + transform.forward * placeDistance;
             float gridX = Mathf.Round(frontPos.x);
             float gridZ = Mathf.Round(frontPos.z);
             Vector3 gridPos = new Vector3(gridX, transform.position.y, gridZ);
 
-            WireNode existingWire = FindWireAtGridPosition(gridPos);
-            if (existingWire != null)
+            // 右クリックを「押した瞬間」にモードを決定する
+            if (Mouse.current.rightButton.wasPressedThisFrame)
             {
-                Destroy(existingWire.gameObject);
-                Invoke(nameof(RefreshAllCircuits), 0.05f);
-                return;
-            }
-
-            if (FindCircuitAtGridPosition(gridPos) != null)
-            {
-                Debug.Log("そこには既に何かが置かれています。");
-            }
-
-            if (!TryGetGroundedPlacePosition(gridX, gridZ, out Vector3 placePos))
-            {
-                Debug.Log("配置先の地面が見つかりませんでした。");
-                return;
-            }
-
-            bool isBlocked = false;
-            Collider[] colliders = Physics.OverlapSphere(placePos, 0.4f);
-            foreach (var col in colliders)
-            {
-                if (col.CompareTag("Player"))
+                WireNode targetWire = FindWireAtGridPosition(gridPos);
+                if (targetWire != null)
                 {
-                    isBlocked = true;
-                    break;
+                    isDeletingMode = true; // 対象マスに回路がある場合は「削除モード」
+                    isPlacingMode = false;
+                }
+                else
+                {
+                    isPlacingMode = true; // 対象マスが空の場合は「設置モード」
+                    isDeletingMode = false;
                 }
             }
 
-            if (!isBlocked)
+            // すでにこの操作で処理済みのマスの場合はスキップ
+            if (lastTargetGridPos.HasValue && lastTargetGridPos.Value == gridPos)
             {
-                GameObject placedCircuit = Instantiate(wirePrefab, placePos, Quaternion.identity);
-                SnapBottomToGround(placedCircuit, placePos.y);
-                Invoke(nameof(RefreshAllCircuits), 0.05f);
+                return;
             }
-            else
+
+            lastTargetGridPos = gridPos;
+
+            WireNode existingWire = FindWireAtGridPosition(gridPos);
+
+            // === 削除モード時の処理 ===
+            if (isDeletingMode)
             {
-                Debug.Log("そこには既に何かが置かれています。");
+                if (existingWire != null)
+                {
+                    Destroy(existingWire.gameObject);
+                    Invoke(nameof(RefreshAllCircuits), 0.05f);
+                }
+                return; // 削除モード中は設置の処理を行わない
+            }
+
+            // === 設置モード時の処理 ===
+            if (isPlacingMode)
+            {
+                if (existingWire != null)
+                {
+                    // 設置モードでは既存の回路を消さないため、ここで処理を終了
+                    return;
+                }
+
+                if (FindCircuitAtGridPosition(gridPos) != null)
+                {
+                    Debug.Log("そこには既に何かが置かれています。");
+                    return;
+                }
+
+                if (!TryGetGroundedPlacePosition(gridX, gridZ, out Vector3 placePos))
+                {
+                    Debug.Log("配置先の地面が見つかりませんでした。");
+                    return;
+                }
+
+                bool isBlocked = false;
+                Collider[] colliders = Physics.OverlapSphere(placePos, 0.4f);
+                foreach (var col in colliders)
+                {
+                    if (col.CompareTag("Player"))
+                    {
+                        isBlocked = true;
+                        break;
+                    }
+                }
+
+                if (!isBlocked)
+                {
+                    GameObject placedCircuit = Instantiate(wirePrefab, placePos, Quaternion.identity);
+                    SnapBottomToGround(placedCircuit, placePos.y);
+                    Invoke(nameof(RefreshAllCircuits), 0.05f);
+                }
+                else
+                {
+                    Debug.Log("そこには既に何かが置かれています。");
+                }
             }
         }
     }
