@@ -68,47 +68,55 @@ public class PlayerController : MonoBehaviour, PlayerAction.IPlayerActions
         InteractSwitch();
         PlaceCircuit();
 
-        float h = moveInput.x;
-        float v = moveInput.y;
+        // 共通でカメラ基準の移動ベクトルを算出しておく
+        Vector3 move = GetCameraRelativeMove(moveInput);
 
         // 梯子に触れている状態での移動
         if (isClimbing)
         {
-            // 上下移動 (Wで登る、Sで降りる)
-            Vector3 verticalMove = new Vector3(0, v, 0) * climbSpeed * Time.deltaTime;
+            // カメラ方向に基づいた移動方向を、プレイヤーの正面（梯子の方向）と左右にどの程度一致しているか射影して取得
+            // climbIntent: >0 で前（梯子に向かう＝登る）、<0 で後ろ（梯子から離れる＝降りる）
+            float climbIntent = Vector3.Dot(move, transform.forward);
 
-            if (isGrounded && v < 0)
+            // horizontalIntent: 梯子に張り付いた状態での左右移動
+            float horizontalIntent = Vector3.Dot(move, transform.right);
+
+            // 上下移動
+            Vector3 verticalMove = new Vector3(0, climbIntent, 0) * climbSpeed * Time.deltaTime;
+
+            // 左右の移動（梯子に張り付いたまま左右にスライド）
+            Vector3 horizontalMove = transform.right * horizontalIntent * climbSpeed * Time.deltaTime;
+
+            if (isGrounded && climbIntent < -0.01f)
             {
-                // 一番上に到達した状態でSキーを押した場合、「歩いて後ろに下がる（落下する）」のではなく、
-                // 「梯子の側面に沿って一段下（Y軸マイナス方向）へ強制的に下ろす」ことで、梯子にへばりついたまま降りるようにする。
+                // 一番上に到達した状態でSキー等を押し「梯子から降りる」方向に入力した場合
                 Vector3 stepDownMove = new Vector3(0, -climbSpeed * 1.5f, 0) * Time.deltaTime;
-                Vector3 horizontalScale = transform.right * h * moveSpeed * Time.deltaTime;
-                transform.position += stepDownMove + horizontalScale;
+                transform.position += stepDownMove + horizontalMove;
             }
             else
             {
-                // Sキーの入力（v < 0）でも登攀中で床についていない場合は通常通り下へ降りる処理を行う
+                // 通常通り下へ降りる処理や、上に登る処理
                 Vector3 climbForwardMove = Vector3.zero;
 
-                if (v > 0)
+                if (climbIntent > 0.01f) // 上に登ろうとしている
                 {
                     Vector3 rayOrigin = transform.position + Vector3.up * 0.8f;
                     bool hasWallAhead = Physics.Raycast(rayOrigin, transform.forward, 1.0f);
                     bool hasWallOverlap = Physics.CheckSphere(rayOrigin + transform.forward * 0.5f, 0.2f);
 
+                    // 目の前に壁がない（梯子を登り切った）場合、前方に進めるようにする
                     if (!hasWallAhead && !hasWallOverlap)
                     {
                         climbForwardMove = transform.forward * climbSpeed * Time.deltaTime;
                     }
                 }
 
-                Vector3 horizontalScale = transform.right * h * moveSpeed * Time.deltaTime;
-                transform.position += verticalMove + horizontalScale + climbForwardMove;
+                transform.position += verticalMove + horizontalMove + climbForwardMove;
             }
             return;
         }
 
-        var move = new Vector3(moveInput.x, 0f, moveInput.y);
+        // 通常の地上移動
         if (move.sqrMagnitude > 0f)
         {
             transform.rotation = Quaternion.LookRotation(move, Vector3.up);
@@ -116,6 +124,39 @@ public class PlayerController : MonoBehaviour, PlayerAction.IPlayerActions
 
         transform.position += move * moveSpeed * Time.deltaTime;
     }
+
+    private Vector3 GetCameraRelativeMove(Vector2 input)
+    {
+        Vector3 fallbackMove = new Vector3(input.x, 0f, input.y);
+        if (fallbackMove.sqrMagnitude <= 0f)
+        {
+            return Vector3.zero;
+        }
+
+        Camera mainCamera = Camera.main;
+        if (mainCamera == null)
+        {
+            return Vector3.ClampMagnitude(fallbackMove, 1f);
+        }
+
+        Vector3 cameraForward = mainCamera.transform.forward;
+        cameraForward.y = 0f;
+
+        Vector3 cameraRight = mainCamera.transform.right;
+        cameraRight.y = 0f;
+
+        if (cameraForward.sqrMagnitude <= 0.001f || cameraRight.sqrMagnitude <= 0.001f)
+        {
+            return Vector3.ClampMagnitude(fallbackMove, 1f);
+        }
+
+        cameraForward.Normalize();
+        cameraRight.Normalize();
+
+        Vector3 cameraRelativeMove = cameraRight * input.x + cameraForward * input.y;
+        return Vector3.ClampMagnitude(cameraRelativeMove, 1f);
+    }
+
 
     // 左クリック: 目の前にあるスイッチを押す
     void InteractSwitch()
@@ -174,6 +215,11 @@ public class PlayerController : MonoBehaviour, PlayerAction.IPlayerActions
                 return;
             }
 
+            if (FindCircuitAtGridPosition(gridPos) != null)
+            {
+                Debug.Log("そこには既に何かが置かれています。");
+            }
+
             if (!TryGetGroundedPlacePosition(gridX, gridZ, out Vector3 placePos))
             {
                 Debug.Log("配置先の地面が見つかりませんでした。");
@@ -182,9 +228,9 @@ public class PlayerController : MonoBehaviour, PlayerAction.IPlayerActions
 
             bool isBlocked = false;
             Collider[] colliders = Physics.OverlapSphere(placePos, 0.4f);
-            foreach(var col in colliders)
+            foreach (var col in colliders)
             {
-                if (col.GetComponent<CircuitNode>() != null || col.CompareTag("Player"))
+                if (col.CompareTag("Player"))
                 {
                     isBlocked = true;
                     break;
@@ -215,6 +261,30 @@ public class PlayerController : MonoBehaviour, PlayerAction.IPlayerActions
             if (wire != null)
             {
                 return wire;
+            }
+        }
+
+        return null;
+    }
+
+    private CircuitNode FindCircuitAtGridPosition(Vector3 gridPos)
+    {
+        if (CircuitManager.Instance == null)
+        {
+            return null;
+        }
+
+        foreach (CircuitNode node in CircuitManager.Instance.allNodes)
+        {
+            if (node == null)
+            {
+                continue;
+            }
+
+            if (Mathf.Round(node.transform.position.x) == Mathf.Round(gridPos.x)
+                && Mathf.Round(node.transform.position.z) == Mathf.Round(gridPos.z))
+            {
+                return node;
             }
         }
 
@@ -416,16 +486,25 @@ public class PlayerController : MonoBehaviour, PlayerAction.IPlayerActions
     // 地面に触れているかを判定するための処理
     private void OnCollisionEnter(Collision collision)
     {
-        isGrounded = true;
+        if (collision.gameObject.CompareTag("Ground"))
+        {
+            isGrounded = true;
+        }
     }
 
     private void OnCollisionStay(Collision collision)
     {
-        isGrounded = true;
+        if (collision.gameObject.CompareTag("Ground"))
+        {
+            isGrounded = true;
+        }
     }
 
     private void OnCollisionExit(Collision collision)
     {
-        isGrounded = false;
+        if (collision.gameObject.CompareTag("Ground"))
+        {
+            isGrounded = false;
+        }
     }
 }

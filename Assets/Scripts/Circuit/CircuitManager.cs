@@ -16,9 +16,22 @@ public class CircuitManager : MonoBehaviour
     // スイッチが操作された時に回路全体の状態を再計算する
     public void RecalculatePower()
     {
+        foreach (var node in allNodes)
+        {
+            if (node != null)
+            {
+                node.ConnectToNeighbors();
+            }
+        }
+
         // 1. まず全てのノードの動力をOFFにリセットする
         foreach (var node in allNodes)
         {
+            if (node == null)
+            {
+                continue;
+            }
+
             node.isPowered = false;
         }
 
@@ -28,6 +41,11 @@ public class CircuitManager : MonoBehaviour
 
         foreach (var node in allNodes)
         {
+            if (node == null)
+            {
+                continue;
+            }
+
             if (node.nodeType == CircuitNode.NodeType.Switch && node.isSwitchOn)
             {
                 checkQueue.Enqueue(node);
@@ -43,6 +61,11 @@ public class CircuitManager : MonoBehaviour
 
             foreach (var neighbor in current.connectedNodes)
             {
+                if (neighbor == null)
+                {
+                    continue;
+                }
+
                 if (!visited.Contains(neighbor))
                 {
                     visited.Add(neighbor);
@@ -55,6 +78,11 @@ public class CircuitManager : MonoBehaviour
         // 4. 全ノードに変更された状態を通知して見た目や動作を更新させる
         foreach (var node in allNodes)
         {
+            if (node == null)
+            {
+                continue;
+            }
+
             node.OnPowerChanged(node.isPowered);
         }
     }
