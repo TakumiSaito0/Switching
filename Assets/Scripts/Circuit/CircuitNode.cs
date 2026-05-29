@@ -15,7 +15,7 @@ public class CircuitNode : MonoBehaviour
     protected virtual void Start()
     {
         CircuitManager.Instance.allNodes.Add(this);
-        ConnectToNeighbors();
+        RefreshAllNodeConnections();
         OnPowerChanged(isPowered);
     }
 
@@ -41,11 +41,13 @@ public class CircuitNode : MonoBehaviour
     {
         connectedNodes.Clear();
 
-        float effectiveRadius = Mathf.Min(connectRadius, maxGridConnectionDistance);
-        Collider[] hitColliders = Physics.OverlapSphere(transform.position, effectiveRadius);
-        foreach (var hit in hitColliders)
+        if (CircuitManager.Instance == null)
         {
-            CircuitNode otherNode = hit.GetComponent<CircuitNode>();
+            return;
+        }
+
+        foreach (CircuitNode otherNode in CircuitManager.Instance.allNodes)
+        {
             if (otherNode != null && otherNode != this && IsWithinGridConnectionDistance(otherNode))
             {
                 connectedNodes.Add(otherNode);
@@ -64,10 +66,37 @@ public class CircuitNode : MonoBehaviour
     {
     }
 
+    private void RefreshAllNodeConnections()
+    {
+        if (CircuitManager.Instance == null)
+        {
+            return;
+        }
+
+        foreach (CircuitNode node in CircuitManager.Instance.allNodes)
+        {
+            if (node != null)
+            {
+                node.ConnectToNeighbors();
+            }
+        }
+    }
+
     private bool IsWithinGridConnectionDistance(CircuitNode otherNode)
     {
-        Vector3 offset = otherNode.transform.position - transform.position;
-        offset.y = 0f;
-        return offset.sqrMagnitude <= maxGridConnectionDistance * maxGridConnectionDistance;
+        Vector3 thisGridPosition = new Vector3(
+            Mathf.Round(transform.position.x),
+            0f,
+            Mathf.Round(transform.position.z)
+        );
+        Vector3 otherGridPosition = new Vector3(
+            Mathf.Round(otherNode.transform.position.x),
+            0f,
+            Mathf.Round(otherNode.transform.position.z)
+        );
+        Vector3 offset = otherGridPosition - thisGridPosition;
+
+        float effectiveDistance = Mathf.Min(connectRadius, maxGridConnectionDistance);
+        return offset.sqrMagnitude <= effectiveDistance * effectiveDistance;
     }
 }

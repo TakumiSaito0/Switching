@@ -2,6 +2,8 @@ using UnityEngine;
 
 public class CameraManager : MonoBehaviour
 {
+    public static CameraManager Instance { get; private set; }
+
     [SerializeField] private Transform focus;
     [SerializeField] private float height = 10f;
     [SerializeField] private float distance = 10f;
@@ -13,8 +15,42 @@ public class CameraManager : MonoBehaviour
 
     private void Awake()
     {
+        Instance = this;
+
+        if (focus == null)
+        {
+            PlayerController player = FindFirstObjectByType<PlayerController>();
+            if (player != null)
+            {
+                focus = player.transform;
+            }
+        }
+
         currentYaw = transform.eulerAngles.y;
         targetYaw = currentYaw;
+    }
+
+    public static CameraManager GetOrCreateMainCameraManager()
+    {
+        if (Instance != null)
+        {
+            return Instance;
+        }
+
+        Camera mainCamera = Camera.main;
+        if (mainCamera == null)
+        {
+            return null;
+        }
+
+        CameraManager manager = mainCamera.GetComponent<CameraManager>();
+        if (manager == null)
+        {
+            manager = mainCamera.gameObject.AddComponent<CameraManager>();
+        }
+
+        Instance = manager;
+        return manager;
     }
 
     private void LateUpdate()
