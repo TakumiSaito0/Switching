@@ -24,6 +24,8 @@ public class PlayerController : MonoBehaviour, PlayerAction.IPlayerActions
     public float placeHeightOffset = 0.5f;
     public LayerMask placeGroundLayers = ~0;
     public GameObject wirePrefab;
+    [SerializeField] private int startingCircuitCount = 0;
+    [SerializeField] private int currentCircuitCount = 0;
 
     [HideInInspector]
     public bool isClimbing = false;
@@ -36,6 +38,17 @@ public class PlayerController : MonoBehaviour, PlayerAction.IPlayerActions
     private Rigidbody rb;
 
     public bool IsHoldingObject => heldRigidbody != null;
+    public int CurrentCircuitCount => currentCircuitCount;
+
+    public void AddCircuits(int amount)
+    {
+        if (amount <= 0)
+        {
+            return;
+        }
+
+        currentCircuitCount += amount;
+    }
 
     private Vector3? lastTargetGridPos = null;
     private bool isPlacingMode = false;
@@ -44,6 +57,7 @@ public class PlayerController : MonoBehaviour, PlayerAction.IPlayerActions
     private void Awake()
     {
         rb = GetComponent<Rigidbody>();
+        currentCircuitCount = Mathf.Max(0, startingCircuitCount);
 
         playerAction = new PlayerAction();
         playerAction.Player.SetCallbacks(this);
@@ -256,6 +270,7 @@ public class PlayerController : MonoBehaviour, PlayerAction.IPlayerActions
                 if (existingWire != null)
                 {
                     Destroy(existingWire.gameObject);
+                    AddCircuits(1);
                     Invoke(nameof(RefreshAllCircuits), 0.05f);
                 }
                 return; // 削除モード中は設置の処理を行わない
@@ -264,6 +279,12 @@ public class PlayerController : MonoBehaviour, PlayerAction.IPlayerActions
             // === 設置モード時の処理 ===
             if (isPlacingMode)
             {
+                if (currentCircuitCount <= 0)
+                {
+                    Debug.Log("回路を持っていません。");
+                    return;
+                }
+
                 if (existingWire != null)
                 {
                     // 設置モードでは既存の回路を消さないため、ここで処理を終了
@@ -297,6 +318,7 @@ public class PlayerController : MonoBehaviour, PlayerAction.IPlayerActions
                 {
                     GameObject placedCircuit = Instantiate(wirePrefab, placePos, Quaternion.identity);
                     SnapBottomToGround(placedCircuit, placePos.y);
+                    currentCircuitCount--;
                     Invoke(nameof(RefreshAllCircuits), 0.05f);
                 }
                 else
