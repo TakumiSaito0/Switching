@@ -9,13 +9,15 @@ public class CircuitCountText : MonoBehaviour
 
     private int lastCount = -1;
 
+    [System.Obsolete]
     private void Awake()
     {
         // Playerがアタッチされていなければ、同じオブジェクトから探すか、
         // シーン内のPlayerControllerを探す
         if (player == null)
         {
-            player = FindObjectOfType<PlayerController>();
+            // FindObjectOfTypeは非推奨のため、FindFirstObjectByTypeに変更
+            player = FindFirstObjectByType<PlayerController>();
         }
 
         // CountTextがアタッチされていなければ、自分のコンポーネントから探す
