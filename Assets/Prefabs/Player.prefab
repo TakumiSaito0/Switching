@@ -126,7 +126,6 @@ GameObject:
   - component: {fileID: 5386314152117227209}
   - component: {fileID: 2801410435436276864}
   - component: {fileID: 1768665190515701568}
-  - component: {fileID: 6273319545129308451}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -287,18 +286,3 @@ MonoBehaviour:
   currentCircuitCount: 0
   isClimbing: 0
   isGrounded: 0
---- !u!114 &6273319545129308451
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8991196273774469549}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 20b38f6f032c4c4489d1820d8f151f61, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
-  player: {fileID: 1768665190515701568}
-  countText: {fileID: 0}
-  label: "\u56de\u8def"
