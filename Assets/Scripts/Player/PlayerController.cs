@@ -222,6 +222,18 @@ public class PlayerController : MonoBehaviour, PlayerAction.IPlayerActions
     // 右クリック: 地面に回路(ワイヤー)を設置・削除する
     void PlaceCircuit()
     {
+        // ----------------------------------------------------
+        // ▼ 追加: 物を持っているときは回路の設置・削除を行わない
+        if (IsHoldingObject)
+        {
+            // モードをリセットして処理を抜ける
+            lastTargetGridPos = null;
+            isPlacingMode = false;
+            isDeletingMode = false;
+            return;
+        }
+        // ----------------------------------------------------
+
         // 押されていない場合は記録とモードをリセットする
         if (!Mouse.current.rightButton.isPressed)
         {
