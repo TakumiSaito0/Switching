@@ -1341,8 +1341,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: Circuit
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 2ae419a8c2600e640b15c7bed4e07156, type: 2}
-  m_sharedMaterial: {fileID: -6815693830985489009, guid: 2ae419a8c2600e640b15c7bed4e07156, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: c1d3999c59c9bf64d9bd0ff8c3d58c05, type: 2}
+  m_sharedMaterial: {fileID: -7045069414042939182, guid: c1d3999c59c9bf64d9bd0ff8c3d58c05, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -2448,6 +2448,30 @@ PrefabInstance:
     - target: {fileID: 1211817912403408363, guid: 33839e05d9c32714fadfefb9ab434bc4, type: 3}
       propertyPath: m_Name
       value: PauseMenuCanvas
+      objectReference: {fileID: 0}
+    - target: {fileID: 2603300356620495007, guid: 33839e05d9c32714fadfefb9ab434bc4, type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: c1d3999c59c9bf64d9bd0ff8c3d58c05, type: 2}
+    - target: {fileID: 2603300356620495007, guid: 33839e05d9c32714fadfefb9ab434bc4, type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -7045069414042939182, guid: c1d3999c59c9bf64d9bd0ff8c3d58c05, type: 2}
+    - target: {fileID: 2603300356620495007, guid: 33839e05d9c32714fadfefb9ab434bc4, type: 3}
+      propertyPath: m_hasFontAssetChanged
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2839358149992621044, guid: 33839e05d9c32714fadfefb9ab434bc4, type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: c1d3999c59c9bf64d9bd0ff8c3d58c05, type: 2}
+    - target: {fileID: 2839358149992621044, guid: 33839e05d9c32714fadfefb9ab434bc4, type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -7045069414042939182, guid: c1d3999c59c9bf64d9bd0ff8c3d58c05, type: 2}
+    - target: {fileID: 2839358149992621044, guid: 33839e05d9c32714fadfefb9ab434bc4, type: 3}
+      propertyPath: m_hasFontAssetChanged
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7535133996200136449, guid: 33839e05d9c32714fadfefb9ab434bc4, type: 3}
       propertyPath: m_Pivot.x
