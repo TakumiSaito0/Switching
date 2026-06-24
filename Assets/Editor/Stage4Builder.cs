@@ -125,7 +125,7 @@ public static class Stage4Builder
     public static void AddStage4ToStageSelect()
     {
         Scene scene = EditorSceneManager.OpenScene(StageSelectPath, OpenSceneMode.Single);
-        GameSceneManager sceneManager = Object.FindFirstObjectByType<GameSceneManager>();
+        GameSceneManager sceneManager = Object.FindAnyObjectByType<GameSceneManager>();
         if (sceneManager == null)
         {
             GameObject managerObject = new GameObject("GameSceneManager");
@@ -211,7 +211,7 @@ public static class Stage4Builder
 
         GameObject bridgeBody = CreateCube(
             "BridgeBody",
-            nodePosition,
+            Vector3.zero,
             new Vector3(2.8f, 0.25f, 2f),
             palette.EnergyBridge,
             bridgeNode.transform
@@ -226,7 +226,7 @@ public static class Stage4Builder
 
     private static Button FindButtonCalling(string methodName)
     {
-        foreach (Button button in Object.FindObjectsByType<Button>(FindObjectsSortMode.None))
+        foreach (Button button in Object.FindObjectsByType<Button>(FindObjectsInactive.Exclude))
         {
             int count = button.onClick.GetPersistentEventCount();
             for (int i = 0; i < count; i++)

@@ -14,6 +14,12 @@ public class CircuitNode : MonoBehaviour
 
     protected virtual void Start()
     {
+        if (CircuitManager.Instance == null)
+        {
+            Debug.LogError("CircuitManager is missing from the scene.", this);
+            return;
+        }
+
         CircuitManager.Instance.allNodes.Add(this);
         RefreshAllNodeConnections();
         OnPowerChanged(isPowered);
