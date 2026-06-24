@@ -3,6 +3,8 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.InputSystem.UI;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
@@ -23,6 +25,7 @@ public static class Stage3Builder
 
         CreateLighting();
         CreateCamera();
+        CreateEventSystem();
         GameObject circuitManager = new GameObject("CircuitManager");
         circuitManager.AddComponent<CircuitManager>();
 
@@ -143,6 +146,13 @@ public static class Stage3Builder
         SetSerializedFloat(manager, "height", 8f);
         SetSerializedFloat(manager, "distance", 10f);
         SetSerializedFloat(manager, "tiltAngle", 58f);
+    }
+
+    private static void CreateEventSystem()
+    {
+        GameObject eventSystemObject = new GameObject("EventSystem");
+        eventSystemObject.AddComponent<EventSystem>();
+        eventSystemObject.AddComponent<InputSystemUIInputModule>();
     }
 
     private static void CreateCircuitCountText(PlayerController player)

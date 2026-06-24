@@ -18,10 +18,11 @@ public class PlayerController : MonoBehaviour, PlayerAction.IPlayerActions
     [SerializeField]
     private Transform grabPoint;
 
-    [Header("アクション設定")]
+    [Header("Action Settings")]
     public float interactDistance = 2.0f;
     public float placeDistance = 1.2f;
     public float placeHeightOffset = 0.5f;
+    public float maxPlaceGroundDrop = 1.5f;
     public LayerMask placeGroundLayers = ~0;
     public GameObject wirePrefab;
     [SerializeField] private int startingCircuitCount = 0;
@@ -86,43 +87,43 @@ public class PlayerController : MonoBehaviour, PlayerAction.IPlayerActions
         InteractSwitch();
         PlaceCircuit();
 
-        // 共通でカメラ基準の移動ベクトルを算出しておく
+        // Calculate movement relative to the active camera.
         Vector3 move = GetCameraRelativeMove(moveInput);
 
-        // 梯子に触れている状態での移動
+        // Movement while attached to a ladder.
         if (isClimbing)
         {
-            // カメラ方向に基づいた移動方向を、プレイヤーの正面（梯子の方向）と左右にどの程度一致しているか射影して取得
-            // climbIntent: >0 で前（梯子に向かう＝登る）、<0 で後ろ（梯子から離れる＝降りる）
+            // Split camera-relative movement into forward climb intent and horizontal ladder movement.
+            // Positive climb intent climbs up; negative intent climbs down.
             float climbIntent = Vector3.Dot(move, transform.forward);
 
-            // horizontalIntent: 梯子に張り付いた状態での左右移動
+            // Horizontal input slides the player sideways while staying on the ladder.
             float horizontalIntent = Vector3.Dot(move, transform.right);
 
-            // 上下移動
+            // Vertical climb movement.
             Vector3 verticalMove = new Vector3(0, climbIntent, 0) * climbSpeed * Time.deltaTime;
 
-            // 左右の移動（梯子に張り付いたまま左右にスライド）
+            // Sideways movement along the ladder.
             Vector3 horizontalMove = transform.right * horizontalIntent * climbSpeed * Time.deltaTime;
 
             if (isGrounded && climbIntent < -0.01f)
             {
-                // 一番上に到達した状態でSキー等を押し「梯子から降りる」方向に入力した場合
+                // Step down when the player is grounded and moves away from the ladder.
                 Vector3 stepDownMove = new Vector3(0, -climbSpeed * 1.5f, 0) * Time.deltaTime;
                 transform.position += stepDownMove + horizontalMove;
             }
             else
             {
-                // 通常通り下へ降りる処理や、上に登る処理
+                // Normal ladder climbing and top-out movement.
                 Vector3 climbForwardMove = Vector3.zero;
 
-                if (climbIntent > 0.01f) // 上に登ろうとしている
+                if (climbIntent > 0.01f) // The player is trying to climb up.
                 {
                     Vector3 rayOrigin = transform.position + Vector3.up * 0.8f;
                     bool hasWallAhead = Physics.Raycast(rayOrigin, transform.forward, 1.0f);
                     bool hasWallOverlap = Physics.CheckSphere(rayOrigin + transform.forward * 0.5f, 0.2f);
 
-                    // 目の前に壁がない（梯子を登り切った）場合、前方に進めるようにする
+                    // Move forward after reaching the top when there is no wall ahead.
                     if (!hasWallAhead && !hasWallOverlap)
                     {
                         climbForwardMove = transform.forward * climbSpeed * Time.deltaTime;
@@ -134,10 +135,10 @@ public class PlayerController : MonoBehaviour, PlayerAction.IPlayerActions
             return;
         }
 
-        // 通常の地上移動
+        // Normal ground movement.
         if (move.sqrMagnitude > 0f)
         {
-            // 右クリックを押しっぱなしの時は向きを変えず平行移動のみにする
+            // While placing circuits, keep facing direction fixed and only strafe.
             if (!Mouse.current.rightButton.isPressed)
             {
                 transform.rotation = Quaternion.LookRotation(move, Vector3.up);
@@ -180,7 +181,7 @@ public class PlayerController : MonoBehaviour, PlayerAction.IPlayerActions
     }
 
 
-    // 左クリック: 目の前にあるスイッチを押す
+    // Left click: press a switch in front of the player.
     void InteractSwitch()
     {
         if (Mouse.current.leftButton.wasPressedThisFrame)
@@ -206,7 +207,7 @@ public class PlayerController : MonoBehaviour, PlayerAction.IPlayerActions
                 if (switchNode != null)
                 {
                     switchNode.ToggleSwitch();
-                    Debug.Log("スイッチを切り替えました！ (" + hit.gameObject.name + ")");
+                    Debug.Log("Switch toggled: " + hit.gameObject.name);
                     switchFound = true;
                     break;
                 }
@@ -214,19 +215,19 @@ public class PlayerController : MonoBehaviour, PlayerAction.IPlayerActions
 
             if (!switchFound)
             {
-                Debug.Log("正面の判定エリア内にスイッチが見つかりませんでした。");
+                Debug.Log("No switch found in front of the player.");
             }
         }
     }
 
-    // 右クリック: 地面に回路(ワイヤー)を設置・削除する
+    // Right click: place or remove a circuit wire on the ground.
     void PlaceCircuit()
     {
         // ----------------------------------------------------
-        // ▼ 追加: 物を持っているときは回路の設置・削除を行わない
+        // Do not place or remove circuits while carrying an object.
         if (IsHoldingObject)
         {
-            // モードをリセットして処理を抜ける
+            // Reset placement state and exit.
             lastTargetGridPos = null;
             isPlacingMode = false;
             isDeletingMode = false;
@@ -234,7 +235,7 @@ public class PlayerController : MonoBehaviour, PlayerAction.IPlayerActions
         }
         // ----------------------------------------------------
 
-        // 押されていない場合は記録とモードをリセットする
+        // Reset placement state when the right button is released.
         if (!Mouse.current.rightButton.isPressed)
         {
             lastTargetGridPos = null;
@@ -250,23 +251,23 @@ public class PlayerController : MonoBehaviour, PlayerAction.IPlayerActions
             float gridZ = Mathf.Round(frontPos.z);
             Vector3 gridPos = new Vector3(gridX, transform.position.y, gridZ);
 
-            // 右クリックを「押した瞬間」にモードを決定する
+            // Decide the mode on the frame the right button is pressed.
             if (Mouse.current.rightButton.wasPressedThisFrame)
             {
                 WireNode targetWire = FindWireAtGridPosition(gridPos);
                 if (targetWire != null)
                 {
-                    isDeletingMode = true; // 対象マスに回路がある場合は「削除モード」
+                    isDeletingMode = true; // Delete mode when a wire exists on the target tile.
                     isPlacingMode = false;
                 }
                 else
                 {
-                    isPlacingMode = true; // 対象マスが空の場合は「設置モード」
+                    isPlacingMode = true; // Placement mode when the target tile is empty.
                     isDeletingMode = false;
                 }
             }
 
-            // すでにこの操作で処理済みのマスの場合はスキップ
+            // Skip a tile that has already been handled during this drag.
             if (lastTargetGridPos.HasValue && lastTargetGridPos.Value == gridPos)
             {
                 return;
@@ -276,7 +277,7 @@ public class PlayerController : MonoBehaviour, PlayerAction.IPlayerActions
 
             WireNode existingWire = FindWireAtGridPosition(gridPos);
 
-            // === 削除モード時の処理 ===
+            // Delete mode.
             if (isDeletingMode)
             {
                 if (existingWire != null)
@@ -285,33 +286,33 @@ public class PlayerController : MonoBehaviour, PlayerAction.IPlayerActions
                     AddCircuits(1);
                     Invoke(nameof(RefreshAllCircuits), 0.05f);
                 }
-                return; // 削除モード中は設置の処理を行わない
+                return; // Do not place while deleting.
             }
 
-            // === 設置モード時の処理 ===
+            // Placement mode.
             if (isPlacingMode)
             {
                 if (currentCircuitCount <= 0)
                 {
-                    Debug.Log("回路を持っていません。");
+                    Debug.Log("No circuits available.");
                     return;
                 }
 
                 if (existingWire != null)
                 {
-                    // 設置モードでは既存の回路を消さないため、ここで処理を終了
+                    // Placement mode leaves existing wires untouched.
                     return;
                 }
 
                 if (FindCircuitAtGridPosition(gridPos) != null)
                 {
-                    Debug.Log("そこには既に何かが置かれています。");
+                    Debug.Log("A circuit already exists at that position.");
                     return;
                 }
 
                 if (!TryGetGroundedPlacePosition(gridX, gridZ, out Vector3 placePos))
                 {
-                    Debug.Log("配置先の地面が見つかりませんでした。");
+                    Debug.Log("No valid ground found for circuit placement.");
                     return;
                 }
 
@@ -335,7 +336,7 @@ public class PlayerController : MonoBehaviour, PlayerAction.IPlayerActions
                 }
                 else
                 {
-                    Debug.Log("そこには既に何かが置かれています。");
+                    Debug.Log("A circuit already exists at that position.");
                 }
             }
         }
@@ -387,12 +388,18 @@ public class PlayerController : MonoBehaviour, PlayerAction.IPlayerActions
         Vector3 rayOrigin = new Vector3(gridX, transform.position.y + 5f, gridZ);
         RaycastHit[] hits = Physics.RaycastAll(rayOrigin, Vector3.down, 20f, placeGroundLayers, QueryTriggerInteraction.Ignore);
 
+        float lowestAllowedGroundY = transform.position.y - maxPlaceGroundDrop;
         float highestGroundY = float.NegativeInfinity;
         bool foundGround = false;
 
         foreach (RaycastHit hit in hits)
         {
             if (hit.collider.GetComponentInParent<CircuitNode>() != null || hit.collider.CompareTag("Player"))
+            {
+                continue;
+            }
+
+            if (hit.point.y < lowestAllowedGroundY)
             {
                 continue;
             }
@@ -548,7 +555,7 @@ public class PlayerController : MonoBehaviour, PlayerAction.IPlayerActions
         heldRigidbody = null;
     }
 
-    // 外部（梯子などのギミック）からプレイヤーを登り状態にするメソッド
+    // Called by external gimmicks such as ladders to enter climbing state.
     public void StartClimbing()
     {
         if (IsHoldingObject)
@@ -564,7 +571,7 @@ public class PlayerController : MonoBehaviour, PlayerAction.IPlayerActions
         }
     }
 
-    // 外部（梯子などのギミック）からプレイヤーの登り状態を解除するメソッド
+    // Called by external gimmicks such as ladders to leave climbing state.
     public void StopClimbing()
     {
         isClimbing = false;
@@ -574,7 +581,7 @@ public class PlayerController : MonoBehaviour, PlayerAction.IPlayerActions
         }
     }
 
-    // 地面に触れているかを判定するための処理
+    // Track whether the player is touching the ground.
     private void OnCollisionEnter(Collision collision)
     {
         if (collision.gameObject.CompareTag("Ground"))
