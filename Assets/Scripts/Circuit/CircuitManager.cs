@@ -5,10 +5,9 @@ public class CircuitManager : MonoBehaviour
 {
     public static CircuitManager Instance;
 
-    // シーン内の全回路ノード
     public List<CircuitNode> allNodes = new List<CircuitNode>();
 
-    void Awake()
+    private void Awake()
     {
         if (Instance != null && Instance != this)
         {
@@ -28,7 +27,6 @@ public class CircuitManager : MonoBehaviour
         }
     }
 
-    // スイッチが操作された時に回路全体の状態を再計算する
     public void RecalculatePower()
     {
         foreach (var node in allNodes)
@@ -39,61 +37,43 @@ public class CircuitManager : MonoBehaviour
             }
         }
 
-        // 1. まず全てのノードの動力をOFFにリセットする
         Dictionary<CircuitNode, bool> previousPowerStates = new Dictionary<CircuitNode, bool>();
-
         foreach (var node in allNodes)
         {
-            if (node == null)
+            if (node != null)
             {
-                continue;
+                previousPowerStates[node] = node.isPowered;
             }
-
-            previousPowerStates[node] = node.isPowered;
-            node.isPowered = false;
         }
 
-        // 2. ONになっているスイッチを探してキューに入れる
         Queue<CircuitNode> checkQueue = new Queue<CircuitNode>();
-        HashSet<CircuitNode> visited = new HashSet<CircuitNode>();
+        HashSet<CircuitNode> poweredNodes = new HashSet<CircuitNode>();
 
         foreach (var node in allNodes)
         {
-            if (node == null)
-            {
-                continue;
-            }
-
-            if (node.nodeType == CircuitNode.NodeType.Switch && node.isSwitchOn)
+            if (node != null && IsPowerSource(node))
             {
                 checkQueue.Enqueue(node);
-                visited.Add(node);
-                node.isPowered = true;
+                poweredNodes.Add(node);
             }
         }
 
-        // 3. 幅優先探索（BFS）で繋がっているノードに順に動力を伝搬する
         while (checkQueue.Count > 0)
         {
             CircuitNode current = checkQueue.Dequeue();
 
             foreach (var neighbor in current.connectedNodes)
             {
-                if (neighbor == null)
+                if (neighbor == null || !CanReceivePower(neighbor) || poweredNodes.Contains(neighbor))
                 {
                     continue;
                 }
 
-                if (!visited.Contains(neighbor))
-                {
-                    visited.Add(neighbor);
-                    neighbor.isPowered = true;
-                    checkQueue.Enqueue(neighbor);
-                }
+                poweredNodes.Add(neighbor);
+                checkQueue.Enqueue(neighbor);
             }
         }
 
-        // 4. 全ノードに変更された状態を通知して見た目や動作を更新させる
         foreach (var node in allNodes)
         {
             if (node == null)
@@ -102,10 +82,23 @@ public class CircuitManager : MonoBehaviour
             }
 
             bool wasPowered = previousPowerStates.TryGetValue(node, out bool previousPower) && previousPower;
-            if (wasPowered != node.isPowered)
+            bool isPowered = poweredNodes.Contains(node);
+            node.isPowered = isPowered;
+
+            if (wasPowered != isPowered)
             {
-                node.OnPowerChanged(node.isPowered);
+                node.OnPowerChanged(isPowered);
             }
         }
+    }
+
+    private bool IsPowerSource(CircuitNode node)
+    {
+        return node.nodeType == CircuitNode.NodeType.Switch && node.isSwitchOn;
+    }
+
+    private bool CanReceivePower(CircuitNode node)
+    {
+        return node.nodeType != CircuitNode.NodeType.Switch || node.isSwitchOn;
     }
 }
