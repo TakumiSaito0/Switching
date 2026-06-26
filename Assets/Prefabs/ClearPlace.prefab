@@ -128,6 +128,16 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ClearManager
   boxTag: Box
+  nextStageName: 
+  stageSelectSceneName: StageSelectScene
+  menuFont: {fileID: 11400000, guid: 2ae419a8c2600e640b15c7bed4e07156, type: 2}
+  titleText: CLEAR
+  nextStageButtonText: NEXT STAGE
+  stageSelectButtonText: STAGE SELECT
+  panelColor: {r: 0.08, g: 0.1, b: 0.12, a: 0.92}
+  buttonColor: {r: 0.95, g: 0.95, b: 0.95, a: 1}
+  titleColor: {r: 1, g: 1, b: 1, a: 1}
+  buttonTextColor: {r: 0.12, g: 0.12, b: 0.12, a: 1}
   onClear:
     m_PersistentCalls:
       m_Calls: []
