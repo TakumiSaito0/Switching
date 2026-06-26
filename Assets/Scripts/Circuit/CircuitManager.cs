@@ -10,7 +10,22 @@ public class CircuitManager : MonoBehaviour
 
     void Awake()
     {
+        if (Instance != null && Instance != this)
+        {
+            Debug.LogWarning("Multiple CircuitManager instances found. Keeping the first one.", this);
+            enabled = false;
+            return;
+        }
+
         Instance = this;
+    }
+
+    private void OnDestroy()
+    {
+        if (Instance == this)
+        {
+            Instance = null;
+        }
     }
 
     // スイッチが操作された時に回路全体の状態を再計算する
@@ -25,6 +40,8 @@ public class CircuitManager : MonoBehaviour
         }
 
         // 1. まず全てのノードの動力をOFFにリセットする
+        Dictionary<CircuitNode, bool> previousPowerStates = new Dictionary<CircuitNode, bool>();
+
         foreach (var node in allNodes)
         {
             if (node == null)
@@ -32,6 +49,7 @@ public class CircuitManager : MonoBehaviour
                 continue;
             }
 
+            previousPowerStates[node] = node.isPowered;
             node.isPowered = false;
         }
 
@@ -83,7 +101,11 @@ public class CircuitManager : MonoBehaviour
                 continue;
             }
 
-            node.OnPowerChanged(node.isPowered);
+            bool wasPowered = previousPowerStates.TryGetValue(node, out bool previousPower) && previousPower;
+            if (wasPowered != node.isPowered)
+            {
+                node.OnPowerChanged(node.isPowered);
+            }
         }
     }
 }

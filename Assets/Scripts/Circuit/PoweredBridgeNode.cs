@@ -1,9 +1,10 @@
 using UnityEngine;
 
-public class PoweredBridgeNode : CircuitNode
+public class PoweredBridgeNode : MonoBehaviour
 {
     [Header("Bridge")]
     [SerializeField] private Transform bridgeBody;
+    [SerializeField] private CircuitNode powerSource;
     [SerializeField] private Vector3 poweredLocalPosition = Vector3.zero;
     [SerializeField] private Vector3 unpoweredLocalPosition = new Vector3(0f, -3f, 0f);
     [SerializeField] private float moveSpeed = 3f;
@@ -14,10 +15,10 @@ public class PoweredBridgeNode : CircuitNode
 
     private Vector3 targetLocalPosition;
     private Renderer[] bridgeRenderers;
+    private bool isPowered;
 
-    protected override void Start()
+    private void Start()
     {
-        nodeType = NodeType.Door;
         if (bridgeBody == null)
         {
             bridgeBody = transform;
@@ -26,7 +27,11 @@ public class PoweredBridgeNode : CircuitNode
         bridgeRenderers = bridgeBody.GetComponentsInChildren<Renderer>();
         bridgeBody.localPosition = unpoweredLocalPosition;
         targetLocalPosition = unpoweredLocalPosition;
-        base.Start();
+
+        if (powerSource != null)
+        {
+            OnPowerChanged(powerSource.isPowered);
+        }
     }
 
     private void Update()
@@ -36,6 +41,11 @@ public class PoweredBridgeNode : CircuitNode
             return;
         }
 
+        if (powerSource != null && powerSource.isPowered != isPowered)
+        {
+            OnPowerChanged(powerSource.isPowered);
+        }
+
         bridgeBody.localPosition = Vector3.MoveTowards(
             bridgeBody.localPosition,
             targetLocalPosition,
@@ -43,9 +53,9 @@ public class PoweredBridgeNode : CircuitNode
         );
     }
 
-    public override void OnPowerChanged(bool powered)
+    private void OnPowerChanged(bool powered)
     {
-        base.OnPowerChanged(powered);
+        isPowered = powered;
         targetLocalPosition = powered ? poweredLocalPosition : unpoweredLocalPosition;
         ApplyColor(powered);
     }

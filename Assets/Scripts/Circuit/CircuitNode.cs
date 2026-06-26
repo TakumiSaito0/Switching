@@ -11,6 +11,8 @@ public class CircuitNode : MonoBehaviour
     public List<CircuitNode> connectedNodes = new List<CircuitNode>();
     public float connectRadius = 1.1f;
     [SerializeField] private float maxGridConnectionDistance = 1.1f;
+    [SerializeField] private float maxVerticalConnectionDistance = 1.5f;
+    [SerializeField] private bool connectOnlyToWires = false;
 
     protected virtual void Start()
     {
@@ -54,7 +56,7 @@ public class CircuitNode : MonoBehaviour
 
         foreach (CircuitNode otherNode in CircuitManager.Instance.allNodes)
         {
-            if (otherNode != null && otherNode != this && IsWithinGridConnectionDistance(otherNode))
+            if (otherNode != null && otherNode != this && CanConnectWith(otherNode))
             {
                 connectedNodes.Add(otherNode);
             }
@@ -88,8 +90,24 @@ public class CircuitNode : MonoBehaviour
         }
     }
 
+    private bool CanConnectWith(CircuitNode otherNode)
+    {
+        return IsWithinGridConnectionDistance(otherNode) || otherNode.IsWithinGridConnectionDistance(this);
+    }
+
     private bool IsWithinGridConnectionDistance(CircuitNode otherNode)
     {
+        if (connectOnlyToWires && otherNode.nodeType != NodeType.Wire)
+        {
+            return false;
+        }
+
+        float verticalDistance = Mathf.Abs(transform.position.y - otherNode.transform.position.y);
+        if (verticalDistance > maxVerticalConnectionDistance)
+        {
+            return false;
+        }
+
         Vector3 thisGridPosition = new Vector3(
             Mathf.Round(transform.position.x),
             0f,
