@@ -31,7 +31,7 @@ public class ClearResultMenu : MonoBehaviour
         Color titleColor,
         Color buttonTextColor)
     {
-        if (FindFirstObjectByType<ClearResultMenu>() != null)
+        if (FindAnyObjectByType<ClearResultMenu>() != null)
         {
             return;
         }

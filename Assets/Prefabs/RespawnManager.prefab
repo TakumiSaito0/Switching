@@ -49,6 +49,7 @@ MonoBehaviour:
   respawnPoint: {fileID: 6013467447540051307}
   fallY: -10
   boxTag: Box
+  stageSelectSceneName: StageSelectScene
   onGameOver:
     m_PersistentCalls:
       m_Calls: []

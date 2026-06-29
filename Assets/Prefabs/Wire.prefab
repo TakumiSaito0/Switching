@@ -132,3 +132,12 @@ MonoBehaviour:
   connectedNodes: []
   connectRadius: 1.1
   maxGridConnectionDistance: 1.1
+  maxVerticalConnectionDistance: 1.5
+  connectOnlyToWires: 0
+  isolatedSize: 0.28
+  centerSize: 0.35
+  armLength: 0.5
+  armThickness: 0.18
+  visualHeight: 0.06
+  poweredColor: {r: 1, g: 0, b: 0, a: 1}
+  unpoweredColor: {r: 0.3, g: 0, b: 0, a: 1}

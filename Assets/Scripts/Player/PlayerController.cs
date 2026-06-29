@@ -3,6 +3,8 @@ using UnityEngine.InputSystem;
 
 public class PlayerController : MonoBehaviour, PlayerAction.IPlayerActions
 {
+    private const float DefaultMaxPlaceGroundRise = 0.75f;
+
     [SerializeField]
     private float moveSpeed = 5f;
 
@@ -11,6 +13,9 @@ public class PlayerController : MonoBehaviour, PlayerAction.IPlayerActions
 
     [SerializeField]
     private float grabDistance = 2f;
+
+    [SerializeField]
+    private float releaseDistance = 1.15f;
 
     [SerializeField]
     private LayerMask grabbableLayers = ~0;
@@ -22,11 +27,20 @@ public class PlayerController : MonoBehaviour, PlayerAction.IPlayerActions
     public float interactDistance = 2.0f;
     public float placeDistance = 1.2f;
     public float placeHeightOffset = 0.5f;
+    public float maxPlaceGroundRise = 0.75f;
     public float maxPlaceGroundDrop = 1.5f;
     public LayerMask placeGroundLayers = ~0;
+    [SerializeField] private string placeableSurfaceTag = "Ground";
     public GameObject wirePrefab;
+    [SerializeField] private string[] blockedPlacementSurfaceNames = { "Stairs", "Step" };
     [SerializeField] private int startingCircuitCount = 0;
     [SerializeField] private int currentCircuitCount = 0;
+
+    [Header("Circuit Placement Preview")]
+    [SerializeField] private Color placePreviewColor = new Color(0.2f, 1f, 0.45f, 0.7f);
+    [SerializeField] private Color removePreviewColor = new Color(1f, 0.55f, 0.15f, 0.7f);
+    [SerializeField] private Color invalidPreviewColor = new Color(1f, 0.15f, 0.15f, 0.55f);
+    [SerializeField] private float previewBlinkSpeed = 6f;
 
     [HideInInspector]
     public bool isClimbing = false;
@@ -37,6 +51,9 @@ public class PlayerController : MonoBehaviour, PlayerAction.IPlayerActions
     private Vector2 moveInput;
     private Rigidbody heldRigidbody;
     private Rigidbody rb;
+    private GameObject circuitPlacementPreview;
+    private Material[] circuitPlacementPreviewMaterials;
+    private bool circuitPlacementInputConsumedThisFrame = false;
 
     public bool IsHoldingObject => heldRigidbody != null;
     public int CurrentCircuitCount => currentCircuitCount;
@@ -52,16 +69,26 @@ public class PlayerController : MonoBehaviour, PlayerAction.IPlayerActions
     }
 
     private Vector3? lastTargetGridPos = null;
+    private bool isCircuitPlacementMode = false;
+    private bool isCircuitPlacementStrokeActive = false;
     private bool isPlacingMode = false;
     private bool isDeletingMode = false;
+
+    private struct CircuitPlacementTarget
+    {
+        public Vector3 GridPosition;
+        public Vector3 PlacePosition;
+        public WireNode ExistingWire;
+        public bool CanPlace;
+        public bool CanRemove;
+    }
 
     private void Awake()
     {
         rb = GetComponent<Rigidbody>();
         currentCircuitCount = Mathf.Max(0, startingCircuitCount);
 
-        playerAction = new PlayerAction();
-        playerAction.Player.SetCallbacks(this);
+        EnsurePlayerAction();
 
         if (grabPoint == null)
         {
@@ -74,18 +101,39 @@ public class PlayerController : MonoBehaviour, PlayerAction.IPlayerActions
 
     private void OnEnable()
     {
+        EnsurePlayerAction();
         playerAction.Enable();
     }
 
     private void OnDisable()
     {
-        playerAction.Disable();
+        isCircuitPlacementMode = false;
+        EndCircuitPlacementStroke();
+        HideCircuitPlacementPreview();
+        playerAction?.Disable();
+    }
+
+    private void OnDestroy()
+    {
+        DestroyCircuitPlacementPreview();
+    }
+
+    private void EnsurePlayerAction()
+    {
+        if (playerAction != null)
+        {
+            return;
+        }
+
+        playerAction = new PlayerAction();
+        playerAction.Player.SetCallbacks(this);
     }
 
     private void Update()
     {
-        InteractSwitch();
+        circuitPlacementInputConsumedThisFrame = false;
         PlaceCircuit();
+        InteractSwitch();
 
         // Calculate movement relative to the active camera.
         Vector3 move = GetCameraRelativeMove(moveInput);
@@ -138,8 +186,8 @@ public class PlayerController : MonoBehaviour, PlayerAction.IPlayerActions
         // Normal ground movement.
         if (move.sqrMagnitude > 0f)
         {
-            // While placing circuits, keep facing direction fixed and only strafe.
-            if (!Mouse.current.rightButton.isPressed)
+            // While dragging circuits, keep facing direction fixed and only strafe.
+            if (Mouse.current == null || !Mouse.current.rightButton.isPressed)
             {
                 transform.rotation = Quaternion.LookRotation(move, Vector3.up);
             }
@@ -184,6 +232,11 @@ public class PlayerController : MonoBehaviour, PlayerAction.IPlayerActions
     // Left click: press a switch in front of the player.
     void InteractSwitch()
     {
+        if (isCircuitPlacementMode || circuitPlacementInputConsumedThisFrame)
+        {
+            return;
+        }
+
         if (Mouse.current.leftButton.wasPressedThisFrame)
         {
             Vector3 boxCenter = transform.position + transform.forward * (interactDistance / 2f) + Vector3.up * 0.5f;
@@ -223,123 +276,332 @@ public class PlayerController : MonoBehaviour, PlayerAction.IPlayerActions
     // Right click: place or remove a circuit wire on the ground.
     void PlaceCircuit()
     {
-        // ----------------------------------------------------
         // Do not place or remove circuits while carrying an object.
-        if (IsHoldingObject)
+        if (IsHoldingObject || wirePrefab == null || Mouse.current == null)
         {
-            // Reset placement state and exit.
-            lastTargetGridPos = null;
-            isPlacingMode = false;
-            isDeletingMode = false;
-            return;
-        }
-        // ----------------------------------------------------
-
-        // Reset placement state when the right button is released.
-        if (!Mouse.current.rightButton.isPressed)
-        {
-            lastTargetGridPos = null;
-            isPlacingMode = false;
-            isDeletingMode = false;
+            ExitCircuitPlacementMode();
             return;
         }
 
-        if (wirePrefab != null)
+        if (!isCircuitPlacementMode)
         {
-            Vector3 frontPos = transform.position + transform.forward * placeDistance;
-            float gridX = Mathf.Round(frontPos.x);
-            float gridZ = Mathf.Round(frontPos.z);
-            Vector3 gridPos = new Vector3(gridX, transform.position.y, gridZ);
-
-            // Decide the mode on the frame the right button is pressed.
             if (Mouse.current.rightButton.wasPressedThisFrame)
             {
-                WireNode targetWire = FindWireAtGridPosition(gridPos);
-                if (targetWire != null)
-                {
-                    isDeletingMode = true; // Delete mode when a wire exists on the target tile.
-                    isPlacingMode = false;
-                }
-                else
-                {
-                    isPlacingMode = true; // Placement mode when the target tile is empty.
-                    isDeletingMode = false;
-                }
+                EnterCircuitPlacementMode();
+                circuitPlacementInputConsumedThisFrame = true;
             }
 
-            // Skip a tile that has already been handled during this drag.
-            if (lastTargetGridPos.HasValue && lastTargetGridPos.Value == gridPos)
+            return;
+        }
+
+        if (ShouldCancelCircuitPlacement())
+        {
+            ExitCircuitPlacementMode();
+            circuitPlacementInputConsumedThisFrame = true;
+            return;
+        }
+
+        UpdateCircuitPlacementPreview();
+
+        if (Mouse.current.rightButton.wasPressedThisFrame)
+        {
+            BeginCircuitPlacementStroke();
+            circuitPlacementInputConsumedThisFrame = true;
+        }
+
+        if (!Mouse.current.rightButton.isPressed)
+        {
+            EndCircuitPlacementStroke();
+            return;
+        }
+
+        ApplyCircuitPlacementStroke();
+    }
+
+    private void EnterCircuitPlacementMode()
+    {
+        isCircuitPlacementMode = true;
+        EndCircuitPlacementStroke();
+        UpdateCircuitPlacementPreview();
+    }
+
+    private void ExitCircuitPlacementMode()
+    {
+        isCircuitPlacementMode = false;
+        EndCircuitPlacementStroke();
+        HideCircuitPlacementPreview();
+    }
+
+    private void BeginCircuitPlacementStroke()
+    {
+        Vector3 gridPos = GetTargetGridPosition();
+        WireNode targetWire = FindWireAtGridPosition(gridPos);
+        isDeletingMode = targetWire != null;
+        isPlacingMode = targetWire == null;
+        isCircuitPlacementStrokeActive = true;
+        lastTargetGridPos = null;
+    }
+
+    private void EndCircuitPlacementStroke()
+    {
+        lastTargetGridPos = null;
+        isCircuitPlacementStrokeActive = false;
+        isPlacingMode = false;
+        isDeletingMode = false;
+    }
+
+    private bool ShouldCancelCircuitPlacement()
+    {
+        if (Mouse.current != null
+            && (Mouse.current.leftButton.wasPressedThisFrame || Mouse.current.middleButton.wasPressedThisFrame))
+        {
+            return true;
+        }
+
+        Keyboard keyboard = Keyboard.current;
+        if (keyboard == null || !keyboard.anyKey.wasPressedThisFrame)
+        {
+            return false;
+        }
+
+        foreach (var key in keyboard.allKeys)
+        {
+            if (key.wasPressedThisFrame && !IsMovementKey(key.keyCode))
             {
-                return;
-            }
-
-            lastTargetGridPos = gridPos;
-
-            WireNode existingWire = FindWireAtGridPosition(gridPos);
-
-            // Delete mode.
-            if (isDeletingMode)
-            {
-                if (existingWire != null)
-                {
-                    Destroy(existingWire.gameObject);
-                    AddCircuits(1);
-                    Invoke(nameof(RefreshAllCircuits), 0.05f);
-                }
-                return; // Do not place while deleting.
-            }
-
-            // Placement mode.
-            if (isPlacingMode)
-            {
-                if (currentCircuitCount <= 0)
-                {
-                    Debug.Log("No circuits available.");
-                    return;
-                }
-
-                if (existingWire != null)
-                {
-                    // Placement mode leaves existing wires untouched.
-                    return;
-                }
-
-                if (FindCircuitAtGridPosition(gridPos) != null)
-                {
-                    Debug.Log("A circuit already exists at that position.");
-                    return;
-                }
-
-                if (!TryGetGroundedPlacePosition(gridX, gridZ, out Vector3 placePos))
-                {
-                    Debug.Log("No valid ground found for circuit placement.");
-                    return;
-                }
-
-                bool isBlocked = false;
-                Collider[] colliders = Physics.OverlapSphere(placePos, 0.4f);
-                foreach (var col in colliders)
-                {
-                    if (col.CompareTag("Player"))
-                    {
-                        isBlocked = true;
-                        break;
-                    }
-                }
-
-                if (!isBlocked)
-                {
-                    GameObject placedCircuit = Instantiate(wirePrefab, placePos, Quaternion.identity);
-                    SnapBottomToGround(placedCircuit, placePos.y);
-                    currentCircuitCount--;
-                    Invoke(nameof(RefreshAllCircuits), 0.05f);
-                }
-                else
-                {
-                    Debug.Log("A circuit already exists at that position.");
-                }
+                return true;
             }
         }
+
+        return false;
+    }
+
+    private bool IsMovementKey(Key key)
+    {
+        return key == Key.W
+            || key == Key.A
+            || key == Key.S
+            || key == Key.D
+            || key == Key.UpArrow
+            || key == Key.DownArrow
+            || key == Key.LeftArrow
+            || key == Key.RightArrow;
+    }
+
+    private Vector3 GetTargetGridPosition()
+    {
+        Vector3 frontPos = transform.position + transform.forward * placeDistance;
+        float gridX = Mathf.Round(frontPos.x);
+        float gridZ = Mathf.Round(frontPos.z);
+        return new Vector3(gridX, transform.position.y, gridZ);
+    }
+
+    private void ApplyCircuitPlacementStroke()
+    {
+        if (!isCircuitPlacementStrokeActive)
+        {
+            return;
+        }
+
+        CircuitPlacementTarget target = GetCircuitPlacementTarget();
+        if (lastTargetGridPos.HasValue && lastTargetGridPos.Value == target.GridPosition)
+        {
+            return;
+        }
+
+        if (isDeletingMode)
+        {
+            if (target.CanRemove)
+            {
+                Destroy(target.ExistingWire.gameObject);
+                AddCircuits(1);
+                lastTargetGridPos = target.GridPosition;
+                Invoke(nameof(RefreshAllCircuits), 0.05f);
+            }
+
+            return;
+        }
+
+        if (!isPlacingMode || !target.CanPlace)
+        {
+            return;
+        }
+
+        GameObject placedCircuit = Instantiate(wirePrefab, target.PlacePosition, Quaternion.identity);
+        SnapBottomToGround(placedCircuit, target.PlacePosition.y);
+        currentCircuitCount--;
+        lastTargetGridPos = target.GridPosition;
+        Invoke(nameof(RefreshAllCircuits), 0.05f);
+        UpdateCircuitPlacementPreview();
+    }
+
+    private void UpdateCircuitPlacementPreview()
+    {
+        CircuitPlacementTarget target = GetCircuitPlacementTarget();
+
+        EnsureCircuitPlacementPreview();
+        circuitPlacementPreview.SetActive(true);
+        circuitPlacementPreview.transform.position = target.PlacePosition + Vector3.up * 0.03f;
+
+        Color previewColor = target.CanRemove ? removePreviewColor : target.CanPlace ? placePreviewColor : invalidPreviewColor;
+        float blink = (Mathf.Sin(Time.time * previewBlinkSpeed) + 1f) * 0.5f;
+        previewColor.a *= Mathf.Lerp(0.25f, 1f, blink);
+        SetCircuitPlacementPreviewColor(previewColor);
+    }
+
+    private CircuitPlacementTarget GetCircuitPlacementTarget()
+    {
+        Vector3 gridPos = GetTargetGridPosition();
+        WireNode existingWire = FindWireAtGridPosition(gridPos);
+        bool hasValidGround = TryGetGroundedPlacePosition(gridPos.x, gridPos.z, out Vector3 placePos);
+        bool hasBlockedSurface = IsBlockedPlacementArea(gridPos.x, gridPos.z, placePos.y);
+
+        bool canPlace = hasValidGround
+            && !hasBlockedSurface
+            && currentCircuitCount > 0
+            && existingWire == null
+            && FindCircuitAtGridPosition(gridPos) == null
+            && !IsCircuitPlaceBlocked(placePos);
+
+        return new CircuitPlacementTarget
+        {
+            GridPosition = gridPos,
+            PlacePosition = placePos,
+            ExistingWire = existingWire,
+            CanPlace = canPlace,
+            CanRemove = existingWire != null
+        };
+    }
+
+    private void EnsureCircuitPlacementPreview()
+    {
+        if (circuitPlacementPreview != null)
+        {
+            return;
+        }
+
+        circuitPlacementPreview = Instantiate(wirePrefab);
+        circuitPlacementPreview.name = "CircuitPlacementPreview";
+        circuitPlacementPreview.hideFlags = HideFlags.DontSave;
+
+        foreach (WireNode previewWire in circuitPlacementPreview.GetComponentsInChildren<WireNode>())
+        {
+            previewWire.RebuildPreviewVisuals();
+        }
+
+        foreach (Transform child in circuitPlacementPreview.GetComponentsInChildren<Transform>())
+        {
+            child.gameObject.hideFlags = HideFlags.DontSave;
+        }
+
+        foreach (Collider previewCollider in circuitPlacementPreview.GetComponentsInChildren<Collider>())
+        {
+            previewCollider.enabled = false;
+        }
+
+        foreach (CircuitNode previewNode in circuitPlacementPreview.GetComponentsInChildren<CircuitNode>())
+        {
+            previewNode.enabled = false;
+        }
+
+        Renderer[] previewRenderers = circuitPlacementPreview.GetComponentsInChildren<Renderer>();
+        circuitPlacementPreviewMaterials = new Material[previewRenderers.Length];
+        for (int i = 0; i < previewRenderers.Length; i++)
+        {
+            circuitPlacementPreviewMaterials[i] = new Material(FindCircuitPreviewShader());
+            ConfigureTransparentMaterial(circuitPlacementPreviewMaterials[i]);
+            previewRenderers[i].material = circuitPlacementPreviewMaterials[i];
+        }
+
+        HideCircuitPlacementPreview();
+    }
+
+    private void HideCircuitPlacementPreview()
+    {
+        if (circuitPlacementPreview != null)
+        {
+            circuitPlacementPreview.SetActive(false);
+        }
+    }
+
+    private void DestroyCircuitPlacementPreview()
+    {
+        if (circuitPlacementPreview != null)
+        {
+            Destroy(circuitPlacementPreview);
+            circuitPlacementPreview = null;
+        }
+
+        if (circuitPlacementPreviewMaterials != null)
+        {
+            foreach (Material previewMaterial in circuitPlacementPreviewMaterials)
+            {
+                if (previewMaterial != null)
+                {
+                    Destroy(previewMaterial);
+                }
+            }
+
+            circuitPlacementPreviewMaterials = null;
+        }
+    }
+
+    private void SetCircuitPlacementPreviewColor(Color color)
+    {
+        if (circuitPlacementPreviewMaterials == null)
+        {
+            return;
+        }
+
+        foreach (Material previewMaterial in circuitPlacementPreviewMaterials)
+        {
+            if (previewMaterial != null)
+            {
+                previewMaterial.color = color;
+            }
+        }
+    }
+
+    private void ConfigureTransparentMaterial(Material material)
+    {
+        material.SetFloat("_Mode", 3f);
+        material.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+        material.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+        material.SetInt("_ZWrite", 0);
+        material.DisableKeyword("_ALPHATEST_ON");
+        material.EnableKeyword("_ALPHABLEND_ON");
+        material.DisableKeyword("_ALPHAPREMULTIPLY_ON");
+        material.renderQueue = 3000;
+    }
+
+    private Shader FindCircuitPreviewShader()
+    {
+        Shader shader = Shader.Find("Standard");
+        if (shader != null)
+        {
+            return shader;
+        }
+
+        shader = Shader.Find("Universal Render Pipeline/Lit");
+        if (shader != null)
+        {
+            return shader;
+        }
+
+        return Shader.Find("Sprites/Default");
+    }
+
+    private bool IsCircuitPlaceBlocked(Vector3 placePos)
+    {
+        Collider[] colliders = Physics.OverlapSphere(placePos, 0.4f);
+        foreach (Collider col in colliders)
+        {
+            if (col.CompareTag("Player"))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private WireNode FindWireAtGridPosition(Vector3 gridPos)
@@ -388,8 +650,116 @@ public class PlayerController : MonoBehaviour, PlayerAction.IPlayerActions
         Vector3 rayOrigin = new Vector3(gridX, transform.position.y + 5f, gridZ);
         RaycastHit[] hits = Physics.RaycastAll(rayOrigin, Vector3.down, 20f, placeGroundLayers, QueryTriggerInteraction.Ignore);
 
-        float lowestAllowedGroundY = transform.position.y - maxPlaceGroundDrop;
-        float highestGroundY = float.NegativeInfinity;
+        float currentGroundY = GetCurrentGroundY();
+        float lowestAllowedGroundY = currentGroundY - maxPlaceGroundDrop;
+        float effectiveMaxPlaceGroundRise = maxPlaceGroundRise > 0f ? maxPlaceGroundRise : DefaultMaxPlaceGroundRise;
+        float highestAllowedGroundY = currentGroundY + effectiveMaxPlaceGroundRise;
+        RaycastHit bestHit = default;
+        bool foundCandidate = false;
+
+        foreach (RaycastHit hit in hits)
+        {
+            if (hit.collider.GetComponentInParent<CircuitNode>() != null || hit.collider.CompareTag("Player"))
+            {
+                continue;
+            }
+
+            if (!IsPlaceableSurface(hit.collider))
+            {
+                continue;
+            }
+
+            if (hit.point.y < lowestAllowedGroundY || hit.point.y > highestAllowedGroundY)
+            {
+                continue;
+            }
+
+            if (IsBlockedPlacementSurface(hit.collider))
+            {
+                placePos = new Vector3(gridX, hit.point.y, gridZ);
+                return false;
+            }
+
+            if (!foundCandidate || hit.point.y > bestHit.point.y)
+            {
+                bestHit = hit;
+                foundCandidate = true;
+            }
+        }
+
+        if (foundCandidate)
+        {
+            placePos = new Vector3(gridX, bestHit.point.y, gridZ);
+            return !IsBlockedPlacementSurface(bestHit.collider);
+        }
+
+        placePos = new Vector3(gridX, placeHeightOffset, gridZ);
+        return false;
+    }
+
+    private bool IsBlockedPlacementArea(float gridX, float gridZ, float groundY)
+    {
+        Vector3 boxCenter = new Vector3(gridX, groundY + 0.6f, gridZ);
+        Vector3 halfExtents = new Vector3(0.48f, 1.2f, 0.48f);
+        Collider[] colliders = Physics.OverlapBox(boxCenter, halfExtents, Quaternion.identity, placeGroundLayers, QueryTriggerInteraction.Ignore);
+
+        foreach (Collider col in colliders)
+        {
+            if (IsBlockedPlacementSurface(col))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private bool IsBlockedPlacementSurface(Collider surfaceCollider)
+    {
+        if (surfaceCollider == null || blockedPlacementSurfaceNames == null)
+        {
+            return false;
+        }
+
+        if (surfaceCollider.GetComponentInParent<PlacementBlockedSurface>() != null)
+        {
+            return true;
+        }
+
+        Transform current = surfaceCollider.transform;
+        while (current != null)
+        {
+            foreach (string blockedName in blockedPlacementSurfaceNames)
+            {
+                if (!string.IsNullOrWhiteSpace(blockedName)
+                    && current.name.IndexOf(blockedName, System.StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    return true;
+                }
+            }
+
+            current = current.parent;
+        }
+
+        return false;
+    }
+
+    private bool IsPlaceableSurface(Collider surfaceCollider)
+    {
+        if (surfaceCollider == null)
+        {
+            return false;
+        }
+
+        return string.IsNullOrWhiteSpace(placeableSurfaceTag) || surfaceCollider.CompareTag(placeableSurfaceTag);
+    }
+
+    private float GetCurrentGroundY()
+    {
+        Vector3 rayOrigin = transform.position + Vector3.up * 0.5f;
+        RaycastHit[] hits = Physics.RaycastAll(rayOrigin, Vector3.down, 4f, placeGroundLayers, QueryTriggerInteraction.Ignore);
+
+        float bestGroundY = float.NegativeInfinity;
         bool foundGround = false;
 
         foreach (RaycastHit hit in hits)
@@ -399,26 +769,19 @@ public class PlayerController : MonoBehaviour, PlayerAction.IPlayerActions
                 continue;
             }
 
-            if (hit.point.y < lowestAllowedGroundY)
+            if (!IsPlaceableSurface(hit.collider))
             {
                 continue;
             }
 
-            if (hit.point.y > highestGroundY)
+            if (hit.point.y > bestGroundY)
             {
-                highestGroundY = hit.point.y;
+                bestGroundY = hit.point.y;
                 foundGround = true;
             }
         }
 
-        if (foundGround)
-        {
-            placePos = new Vector3(gridX, highestGroundY, gridZ);
-            return true;
-        }
-
-        placePos = new Vector3(gridX, placeHeightOffset, gridZ);
-        return false;
+        return foundGround ? bestGroundY : transform.position.y;
     }
 
     private void SnapBottomToGround(GameObject placedObject, float groundY)
@@ -500,13 +863,26 @@ public class PlayerController : MonoBehaviour, PlayerAction.IPlayerActions
 
     public void OnCatch(InputAction.CallbackContext context)
     {
+        if (isCircuitPlacementMode)
+        {
+            if (context.started)
+            {
+                ExitCircuitPlacementMode();
+            }
+
+            return;
+        }
+
         if (context.started)
         {
-            TryGrab();
-        }
-        else if (context.canceled)
-        {
-            Release();
+            if (heldRigidbody == null)
+            {
+                TryGrab();
+            }
+            else
+            {
+                Release();
+            }
         }
     }
 
@@ -550,9 +926,101 @@ public class PlayerController : MonoBehaviour, PlayerAction.IPlayerActions
             return;
         }
 
-        heldRigidbody.transform.SetParent(null, true);
-        heldRigidbody.isKinematic = false;
+        Rigidbody releasedRigidbody = heldRigidbody;
+        releasedRigidbody.transform.SetParent(null, true);
+        if (!MoveHeldObjectToSafeReleasePosition(releasedRigidbody))
+        {
+            releasedRigidbody.transform.SetParent(grabPoint, true);
+            releasedRigidbody.transform.localPosition = Vector3.zero;
+            releasedRigidbody.transform.localRotation = Quaternion.identity;
+            return;
+        }
+
+        releasedRigidbody.isKinematic = false;
+        releasedRigidbody.linearVelocity = Vector3.zero;
+        releasedRigidbody.angularVelocity = Vector3.zero;
         heldRigidbody = null;
+    }
+
+    private bool MoveHeldObjectToSafeReleasePosition(Rigidbody targetRigidbody)
+    {
+        if (targetRigidbody == null)
+        {
+            return false;
+        }
+
+        Bounds? bounds = GetObjectBounds(targetRigidbody.gameObject);
+        float objectHalfHeight = bounds.HasValue ? Mathf.Max(0.05f, bounds.Value.extents.y) : 0.5f;
+        float objectRadius = bounds.HasValue
+            ? Mathf.Max(Mathf.Max(bounds.Value.extents.x, bounds.Value.extents.z), 0.35f)
+            : 0.5f;
+
+        Vector3[] candidateCenters =
+        {
+            transform.position + transform.forward * releaseDistance,
+            transform.position + transform.forward * (releaseDistance + objectRadius),
+            transform.position + transform.forward * 0.6f,
+            transform.position + transform.right * objectRadius,
+            transform.position - transform.right * objectRadius
+        };
+
+        foreach (Vector3 candidateCenter in candidateCenters)
+        {
+            if (TryGetSafeReleasePosition(candidateCenter, objectRadius, objectHalfHeight, targetRigidbody, out Vector3 safePosition))
+            {
+                targetRigidbody.transform.position = safePosition;
+                Physics.SyncTransforms();
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private bool TryGetSafeReleasePosition(
+        Vector3 candidateCenter,
+        float objectRadius,
+        float objectHalfHeight,
+        Rigidbody targetRigidbody,
+        out Vector3 safePosition)
+    {
+        safePosition = candidateCenter;
+
+        Vector3 rayOrigin = candidateCenter + Vector3.up * 2f;
+        if (!Physics.Raycast(rayOrigin, Vector3.down, out RaycastHit groundHit, 5f, placeGroundLayers, QueryTriggerInteraction.Ignore))
+        {
+            return false;
+        }
+
+        if (groundHit.collider.GetComponentInParent<CircuitNode>() != null
+            || groundHit.collider.CompareTag("Player")
+            || !IsPlaceableSurface(groundHit.collider)
+            || IsBlockedPlacementSurface(groundHit.collider))
+        {
+            return false;
+        }
+
+        Vector3 safeCenter = new Vector3(candidateCenter.x, groundHit.point.y + objectHalfHeight + 0.03f, candidateCenter.z);
+        Vector3 halfExtents = new Vector3(objectRadius * 0.9f, objectHalfHeight * 0.9f, objectRadius * 0.9f);
+        Collider[] overlaps = Physics.OverlapBox(safeCenter, halfExtents, targetRigidbody.rotation, ~0, QueryTriggerInteraction.Ignore);
+
+        foreach (Collider overlap in overlaps)
+        {
+            if (overlap.attachedRigidbody == targetRigidbody || overlap.CompareTag("Player"))
+            {
+                continue;
+            }
+
+            if (overlap.GetComponentInParent<CircuitNode>() != null)
+            {
+                continue;
+            }
+
+            return false;
+        }
+
+        safePosition = safeCenter;
+        return true;
     }
 
     // Called by external gimmicks such as ladders to enter climbing state.
