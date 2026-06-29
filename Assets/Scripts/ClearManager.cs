@@ -57,6 +57,7 @@ public class ClearManager : MonoBehaviour
 
         isCleared = true;
         onClear?.Invoke();
+        GameSfx.Play("sfx_clear_lowpoly");
         ClearResultMenu.Show(
             nextStageName,
             stageSelectSceneName,

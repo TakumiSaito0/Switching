@@ -20,6 +20,7 @@ public class DoorNode : CircuitNode
     private float targetAngle;
     private Renderer doorRenderer;
     private GameObject runtimeDoorBodyObject;
+    private bool hasInitializedPowerState;
 
     private void Awake()
     {
@@ -82,6 +83,13 @@ public class DoorNode : CircuitNode
         {
             doorRenderer.material.color = powered ? poweredColor : unpoweredColor;
         }
+
+        if (hasInitializedPowerState)
+        {
+            GameSfx.PlayAt("sfx_door_open_lowpoly", transform.position, 0.8f);
+        }
+
+        hasInitializedPowerState = true;
     }
 
     private void ApplyAngle(float angle)

@@ -415,6 +415,7 @@ public class PlayerController : MonoBehaviour, PlayerAction.IPlayerActions
                 Destroy(target.ExistingWire.gameObject);
                 AddCircuits(1);
                 lastTargetGridPos = target.GridPosition;
+                GameSfx.PlayAt("sfx_circuit_remove_lowpoly", target.GridPosition);
                 Invoke(nameof(RefreshAllCircuits), 0.05f);
             }
 
@@ -430,6 +431,7 @@ public class PlayerController : MonoBehaviour, PlayerAction.IPlayerActions
         SnapBottomToGround(placedCircuit, target.PlacePosition.y);
         currentCircuitCount--;
         lastTargetGridPos = target.GridPosition;
+        GameSfx.PlayAt("sfx_circuit_place", target.PlacePosition);
         Invoke(nameof(RefreshAllCircuits), 0.05f);
         UpdateCircuitPlacementPreview();
     }
@@ -912,6 +914,7 @@ public class PlayerController : MonoBehaviour, PlayerAction.IPlayerActions
         heldRigidbody.transform.SetParent(grabPoint, true);
         heldRigidbody.transform.localPosition = Vector3.zero;
         heldRigidbody.transform.localRotation = Quaternion.identity;
+        GameSfx.PlayAt("sfx_box_pickup_lowpoly", heldRigidbody.position);
 
         if (isClimbing)
         {
@@ -939,6 +942,7 @@ public class PlayerController : MonoBehaviour, PlayerAction.IPlayerActions
         releasedRigidbody.isKinematic = false;
         releasedRigidbody.linearVelocity = Vector3.zero;
         releasedRigidbody.angularVelocity = Vector3.zero;
+        GameSfx.PlayAt("sfx_box_drop_lowpoly", releasedRigidbody.position);
         heldRigidbody = null;
     }
 

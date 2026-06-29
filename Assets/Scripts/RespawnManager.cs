@@ -73,6 +73,7 @@ public class RespawnManager : MonoBehaviour
         Debug.Log("A box fell out of the stage. Game Over.");
 
         onGameOver?.Invoke();
+        GameSfx.Play("sfx_game_over_lowpoly");
         GameOverMenu.Show(stageSelectSceneName);
     }
 }
