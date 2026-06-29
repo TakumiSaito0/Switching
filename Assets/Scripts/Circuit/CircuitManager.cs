@@ -74,6 +74,7 @@ public class CircuitManager : MonoBehaviour
             }
         }
 
+        bool anyPoweredOn = false;
         foreach (var node in allNodes)
         {
             if (node == null)
@@ -88,7 +89,13 @@ public class CircuitManager : MonoBehaviour
             if (wasPowered != isPowered)
             {
                 node.OnPowerChanged(isPowered);
+                anyPoweredOn |= isPowered;
             }
+        }
+
+        if (anyPoweredOn)
+        {
+            GameSfx.Play("sfx_circuit_power_lowpoly", 0.7f);
         }
     }
 

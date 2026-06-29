@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5f2c8f5f607748bc97f9d5965955e9cc, type: 3}
+  m_Name: GameSfxSettings
+  m_EditorClassIdentifier: 
+  masterVolume: 1.8
+  circuitPlaceVolume: 1.6
+  circuitRemoveVolume: 1.5
+  circuitPowerVolume: 1.4
+  switchVolume: 1.5
+  boxPickupVolume: 1.8
+  boxDropVolume: 1.9
+  doorVolume: 1.5
+  clearVolume: 1.5
+  gameOverVolume: 1.5
+  spatialBlend: 0.2
+  boxSpatialBlend: 0
+  minDistance: 8
+  maxDistance: 40

@@ -12,6 +12,7 @@ public class SwitchNode : CircuitNode
     public void ToggleSwitch()
     {
         isSwitchOn = !isSwitchOn;
+        GameSfx.PlayAt("sfx_switch_lowpoly", transform.position);
         CircuitManager.Instance.RecalculatePower();
     }
 
