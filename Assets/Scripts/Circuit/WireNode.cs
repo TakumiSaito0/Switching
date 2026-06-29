@@ -13,6 +13,7 @@ public class WireNode : CircuitNode
     }
 
     [Header("Visual")]
+    [SerializeField, Range(0.05f, 0.6f)] private float isolatedSize = 0.28f;
     [SerializeField] private float centerSize = 0.35f;
     [SerializeField] private float armLength = 0.5f;
     [SerializeField] private float armThickness = 0.18f;
@@ -64,6 +65,14 @@ public class WireNode : CircuitNode
         ApplyColor(powered);
     }
 
+    public void RebuildPreviewVisuals()
+    {
+        nodeType = NodeType.Wire;
+        nodeRenderer = GetComponent<Renderer>();
+        RebuildVisuals();
+        ApplyColor(false);
+    }
+
     private void RebuildVisuals()
     {
         Transform oldVisualRoot = visualRoot != null ? visualRoot : transform.Find("WireVisual");
@@ -93,11 +102,11 @@ public class WireNode : CircuitNode
 
         if (directions.Count == 0)
         {
-            CreateBox("Isolated", Vector3.up * visualHeight, new Vector3(centerSize, visualHeight, centerSize));
+            CreateBox("Isolated", Vector3.up * (visualHeight * 0.5f), new Vector3(isolatedSize, visualHeight, isolatedSize));
             return;
         }
 
-        CreateBox("Center", Vector3.up * visualHeight, new Vector3(centerSize, visualHeight, centerSize));
+        CreateBox("Center", Vector3.up * (visualHeight * 0.5f), new Vector3(centerSize, visualHeight, centerSize));
 
         foreach (WireDirection direction in directions)
         {
@@ -139,7 +148,7 @@ public class WireNode : CircuitNode
 
     private void CreateArm(WireDirection direction)
     {
-        Vector3 position = Vector3.up * visualHeight;
+        Vector3 position = Vector3.up * (visualHeight * 0.5f);
         Vector3 scale;
 
         switch (direction)

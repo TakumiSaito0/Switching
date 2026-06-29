@@ -7,12 +7,14 @@ public class RespawnManager : MonoBehaviour
     [SerializeField] private Transform respawnPoint;
     [SerializeField] private float fallY = -10f;
     [SerializeField] private string boxTag = "Box";
+    [SerializeField] private string stageSelectSceneName = "StageSelectScene";
 
-    [Header("ゲームオーバー処理")]
+    [Header("Game Over")]
     [SerializeField] private UnityEvent onGameOver;
 
     private Rigidbody playerRigidbody;
     private GameObject[] boxes;
+    private bool isGameOver = false;
 
     private void Awake()
     {
@@ -24,31 +26,32 @@ public class RespawnManager : MonoBehaviour
 
     private void Start()
     {
-        // シーン内の箱をすべて探して登録する
         boxes = GameObject.FindGameObjectsWithTag(boxTag);
     }
 
     private void Update()
     {
-        // プレイヤーの落下チェック
-        if (player != null && respawnPoint != null)
+        if (isGameOver)
         {
-            if (player.position.y < fallY)
-            {
-                Respawn();
-            }
+            return;
         }
 
-        // 箱の落下チェック
-        if (boxes != null)
+        if (player != null && respawnPoint != null && player.position.y < fallY)
         {
-            foreach (var box in boxes)
+            Respawn();
+        }
+
+        if (boxes == null)
+        {
+            return;
+        }
+
+        foreach (GameObject box in boxes)
+        {
+            if (box != null && box.transform.position.y < fallY)
             {
-                if (box != null && box.transform.position.y < fallY)
-                {
-                    GameOver();
-                    break; // 重複して呼ばれないようにする
-                }
+                GameOver();
+                break;
             }
         }
     }
@@ -66,13 +69,10 @@ public class RespawnManager : MonoBehaviour
 
     private void GameOver()
     {
-        Debug.Log("箱が場外に落ちました。ゲームオーバー！");
+        isGameOver = true;
+        Debug.Log("A box fell out of the stage. Game Over.");
 
-        // UnityEvent に演出が登録されていれば呼び出す
         onGameOver?.Invoke();
-
-        // とりあえずプレイヤーを初期位置に戻し、簡易的なリトライとする
-        // （シーンの再読み込みをしたい場合は SceneManager を利用してください）
-        Respawn();
+        GameOverMenu.Show(stageSelectSceneName);
     }
 }

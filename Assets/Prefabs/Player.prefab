@@ -271,6 +271,7 @@ MonoBehaviour:
   moveSpeed: 5
   climbSpeed: 3
   grabDistance: 2
+  releaseDistance: 1.15
   grabbableLayers:
     serializedVersion: 2
     m_Bits: 4294967295
@@ -278,11 +279,20 @@ MonoBehaviour:
   interactDistance: 1
   placeDistance: 1.2
   placeHeightOffset: 0.5
+  maxPlaceGroundRise: 0.75
   placeGroundLayers:
     serializedVersion: 2
     m_Bits: 4294967295
+  placeableSurfaceTag: Ground
   wirePrefab: {fileID: 3256575040331250606, guid: 75c89bec2694dc642a35aae69a421565, type: 3}
+  blockedPlacementSurfaceNames:
+  - Stairs
+  - Step
   startingCircuitCount: 0
   currentCircuitCount: 0
+  placePreviewColor: {r: 0.2, g: 1, b: 0.45, a: 0.7}
+  removePreviewColor: {r: 1, g: 0.55, b: 0.15, a: 0.7}
+  invalidPreviewColor: {r: 1, g: 0.15, b: 0.15, a: 0.55}
+  previewBlinkSpeed: 6
   isClimbing: 0
   isGrounded: 0
