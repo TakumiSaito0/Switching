@@ -67,6 +67,16 @@ public class RespawnManager : MonoBehaviour
         }
     }
 
+    public void RespawnPlayer()
+    {
+        if (player == null || respawnPoint == null)
+        {
+            return;
+        }
+
+        Respawn();
+    }
+
     private void GameOver()
     {
         isGameOver = true;
