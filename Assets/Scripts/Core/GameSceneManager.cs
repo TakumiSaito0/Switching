@@ -42,4 +42,9 @@ public class GameSceneManager : MonoBehaviour
     {
         SceneManager.LoadScene("Stage4");
     }
+
+    public void LoadStage5()
+    {
+        SceneManager.LoadScene("Stage5");
+    }
 }
