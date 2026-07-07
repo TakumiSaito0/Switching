@@ -1172,30 +1172,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 3917840652297467514, guid: f514ef3697969d1448f240ede26d83b0, type: 3}
-      propertyPath: doorBody
-      value: 
-      objectReference: {fileID: 0}
-    - target: {fileID: 3917840652297467514, guid: f514ef3697969d1448f240ede26d83b0, type: 3}
-      propertyPath: connectRadius
-      value: 2
-      objectReference: {fileID: 0}
-    - target: {fileID: 3917840652297467514, guid: f514ef3697969d1448f240ede26d83b0, type: 3}
-      propertyPath: blockingCollider
-      value: 
-      objectReference: {fileID: 0}
-    - target: {fileID: 3917840652297467514, guid: f514ef3697969d1448f240ede26d83b0, type: 3}
-      propertyPath: hingeLocalOffset.x
-      value: -2
-      objectReference: {fileID: 0}
-    - target: {fileID: 3917840652297467514, guid: f514ef3697969d1448f240ede26d83b0, type: 3}
-      propertyPath: maxGridConnectionDistance
-      value: 2
-      objectReference: {fileID: 0}
-    - target: {fileID: 3917840652297467514, guid: f514ef3697969d1448f240ede26d83b0, type: 3}
-      propertyPath: maxVerticalConnectionDistance
-      value: 2
-      objectReference: {fileID: 0}
     - target: {fileID: 5443128219978128973, guid: f514ef3697969d1448f240ede26d83b0, type: 3}
       propertyPath: m_Name
       value: Door
