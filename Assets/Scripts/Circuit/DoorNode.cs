@@ -14,6 +14,15 @@ public class DoorNode : CircuitNode
     [SerializeField] private Color poweredColor = Color.cyan;
     [SerializeField] private Color unpoweredColor = Color.red;
 
+    [Header("Connection Marker")]
+    [SerializeField] private bool showConnectionMarker = true;
+    [SerializeField] private Vector3 connectionMarkerLocalOffset = new Vector3(0f, -0.43f, -1f);
+    [SerializeField] private Color connectionMarkerColor = new Color(1f, 0.82f, 0.12f, 1f);
+    [SerializeField] private Color connectionMarkerPulseColor = new Color(0.1f, 1f, 1f, 1f);
+    [SerializeField] private float connectionMarkerPulseSpeed = 2.2f;
+    [SerializeField] private float connectionMarkerGroundOffset = 0.04f;
+    [SerializeField] private float connectionMarkerGroundSearchHeight = 3f;
+
     private Vector3 closedPosition;
     private Quaternion closedRotation;
     private float currentAngle;
@@ -21,6 +30,8 @@ public class DoorNode : CircuitNode
     private Renderer doorRenderer;
     private GameObject runtimeDoorBodyObject;
     private bool hasInitializedPowerState;
+    private Transform connectionMarkerRoot;
+    private Material connectionMarkerMaterial;
 
     private void Awake()
     {
@@ -37,6 +48,7 @@ public class DoorNode : CircuitNode
         doorRenderer = doorBody.GetComponent<Renderer>();
         closedPosition = doorBody.position;
         closedRotation = doorBody.rotation;
+        CreateConnectionMarker();
     }
 
     protected override void Start()
@@ -60,12 +72,37 @@ public class DoorNode : CircuitNode
                 DestroyImmediate(runtimeDoorBodyObject);
             }
         }
+
+        if (connectionMarkerRoot != null)
+        {
+            if (Application.isPlaying)
+            {
+                Destroy(connectionMarkerRoot.gameObject);
+            }
+            else
+            {
+                DestroyImmediate(connectionMarkerRoot.gameObject);
+            }
+        }
+
+        if (connectionMarkerMaterial != null)
+        {
+            if (Application.isPlaying)
+            {
+                Destroy(connectionMarkerMaterial);
+            }
+            else
+            {
+                DestroyImmediate(connectionMarkerMaterial);
+            }
+        }
     }
 
     private void Update()
     {
         float nextAngle = Mathf.MoveTowards(currentAngle, targetAngle, openSpeed * Time.deltaTime);
         ApplyAngle(nextAngle);
+        UpdateConnectionMarker();
     }
 
     public override void OnPowerChanged(bool powered)
@@ -134,6 +171,139 @@ public class DoorNode : CircuitNode
         }
 
         return runtimeDoorBodyObject.transform;
+    }
+
+    private void CreateConnectionMarker()
+    {
+        if (!showConnectionMarker)
+        {
+            return;
+        }
+
+        GameObject root = new GameObject("CircuitPlacementMarker");
+        root.layer = gameObject.layer;
+        root.transform.SetParent(transform.parent, true);
+        root.transform.SetPositionAndRotation(GetConnectionMarkerPosition(), transform.rotation);
+        root.transform.localScale = Vector3.one;
+        connectionMarkerRoot = root.transform;
+
+        connectionMarkerMaterial = new Material(FindMarkerShader());
+        SetMarkerMaterialColor(connectionMarkerColor);
+
+        CreateMarkerBar("Marker_Edge_Front", new Vector3(0f, 0f, 0.45f), new Vector3(0.78f, 0.035f, 0.08f));
+        CreateMarkerBar("Marker_Edge_Back", new Vector3(0f, 0f, -0.45f), new Vector3(0.78f, 0.035f, 0.08f));
+        CreateMarkerBar("Marker_Edge_Left", new Vector3(-0.45f, 0f, 0f), new Vector3(0.08f, 0.035f, 0.78f));
+        CreateMarkerBar("Marker_Edge_Right", new Vector3(0.45f, 0f, 0f), new Vector3(0.08f, 0.035f, 0.78f));
+        CreateMarkerBar("Marker_Arrow_Stem", new Vector3(0f, 0f, 0.88f), new Vector3(0.11f, 0.035f, 0.42f));
+
+        Transform arrowLeft = CreateMarkerBar("Marker_Arrow_Left", new Vector3(-0.12f, 0f, 0.62f), new Vector3(0.09f, 0.035f, 0.35f));
+        arrowLeft.localRotation = Quaternion.Euler(0f, 35f, 0f);
+
+        Transform arrowRight = CreateMarkerBar("Marker_Arrow_Right", new Vector3(0.12f, 0f, 0.62f), new Vector3(0.09f, 0.035f, 0.35f));
+        arrowRight.localRotation = Quaternion.Euler(0f, -35f, 0f);
+    }
+
+    private Transform CreateMarkerBar(string objectName, Vector3 localPosition, Vector3 localScale)
+    {
+        GameObject bar = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        bar.name = objectName;
+        bar.layer = gameObject.layer;
+        bar.transform.SetParent(connectionMarkerRoot, false);
+        bar.transform.localPosition = localPosition;
+        bar.transform.localScale = localScale;
+
+        Collider markerCollider = bar.GetComponent<Collider>();
+        if (markerCollider != null)
+        {
+            Destroy(markerCollider);
+        }
+
+        Renderer markerRenderer = bar.GetComponent<Renderer>();
+        if (markerRenderer != null)
+        {
+            markerRenderer.sharedMaterial = connectionMarkerMaterial;
+        }
+
+        return bar.transform;
+    }
+
+    private void UpdateConnectionMarker()
+    {
+        if (connectionMarkerRoot == null || connectionMarkerMaterial == null)
+        {
+            return;
+        }
+
+        float pulse = (Mathf.Sin(Time.time * connectionMarkerPulseSpeed) + 1f) * 0.5f;
+        Color markerColor = Color.Lerp(connectionMarkerColor, connectionMarkerPulseColor, pulse);
+        SetMarkerMaterialColor(markerColor);
+        float markerScale = Mathf.Lerp(0.92f, 1.08f, pulse);
+        connectionMarkerRoot.SetPositionAndRotation(GetConnectionMarkerPosition(), transform.rotation);
+        connectionMarkerRoot.localScale = new Vector3(markerScale, 1f, markerScale);
+    }
+
+    private Vector3 GetConnectionMarkerPosition()
+    {
+        Vector3 markerPosition = transform.position + transform.rotation * connectionMarkerLocalOffset;
+        Ray groundRay = new Ray(markerPosition + Vector3.up * connectionMarkerGroundSearchHeight, Vector3.down);
+        RaycastHit[] hits = Physics.RaycastAll(
+            groundRay,
+            connectionMarkerGroundSearchHeight * 2f,
+            Physics.DefaultRaycastLayers,
+            QueryTriggerInteraction.Ignore
+        );
+
+        float closestDistance = float.MaxValue;
+        bool foundGround = false;
+        foreach (RaycastHit hit in hits)
+        {
+            if (!hit.collider.CompareTag("Ground"))
+            {
+                continue;
+            }
+
+            if (hit.distance < closestDistance)
+            {
+                closestDistance = hit.distance;
+                markerPosition.y = hit.point.y + connectionMarkerGroundOffset;
+                foundGround = true;
+            }
+        }
+
+        if (!foundGround)
+        {
+            markerPosition.y += connectionMarkerGroundOffset;
+        }
+
+        return markerPosition;
+    }
+
+    private void SetMarkerMaterialColor(Color color)
+    {
+        if (connectionMarkerMaterial == null)
+        {
+            return;
+        }
+
+        connectionMarkerMaterial.color = color;
+
+        if (connectionMarkerMaterial.HasProperty("_BaseColor"))
+        {
+            connectionMarkerMaterial.SetColor("_BaseColor", color);
+        }
+
+        if (connectionMarkerMaterial.HasProperty("_EmissionColor"))
+        {
+            connectionMarkerMaterial.EnableKeyword("_EMISSION");
+            connectionMarkerMaterial.SetColor("_EmissionColor", color * 1.4f);
+        }
+    }
+
+    private Shader FindMarkerShader()
+    {
+        return Shader.Find("Universal Render Pipeline/Unlit")
+            ?? Shader.Find("Universal Render Pipeline/Lit")
+            ?? Shader.Find("Standard");
     }
 
     private Collider CopyCollider(Collider source, GameObject target)

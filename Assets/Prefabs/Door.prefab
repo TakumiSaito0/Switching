@@ -130,8 +130,10 @@ MonoBehaviour:
   isPowered: 0
   isSwitchOn: 0
   connectedNodes: []
-  connectRadius: 1.1
-  maxGridConnectionDistance: 1.1
+  connectRadius: 2
+  maxGridConnectionDistance: 2
+  maxVerticalConnectionDistance: 2
+  connectOnlyToWires: 0
   doorBody: {fileID: 0}
   blockingCollider: {fileID: 0}
   hingeLocalOffset: {x: -2, y: 0, z: 0}
@@ -140,3 +142,10 @@ MonoBehaviour:
   disableColliderWhenOpen: 0
   poweredColor: {r: 0, g: 1, b: 1, a: 1}
   unpoweredColor: {r: 1, g: 0, b: 0, a: 1}
+  showConnectionMarker: 1
+  connectionMarkerLocalOffset: {x: -0.2, y: -0.43, z: -1}
+  connectionMarkerColor: {r: 1, g: 0.82, b: 0.12, a: 1}
+  connectionMarkerPulseColor: {r: 0.1, g: 1, b: 1, a: 1}
+  connectionMarkerPulseSpeed: 2.2
+  connectionMarkerGroundOffset: 0.04
+  connectionMarkerGroundSearchHeight: 3
