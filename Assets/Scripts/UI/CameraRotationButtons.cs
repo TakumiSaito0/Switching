@@ -21,25 +21,24 @@ public class CameraRotationButtons : MonoBehaviour
 
     private void Update()
     {
-        if (Mouse.current == null || !Mouse.current.leftButton.wasPressedThisFrame)
-        {
-            return;
-        }
-
-        Vector2 pointerPosition = Mouse.current.position.ReadValue();
         CameraManager cameraManager = CameraManager.GetOrCreateMainCameraManager();
         if (cameraManager == null)
         {
             return;
         }
 
-        if (IsPointerInside(leftButton, pointerPosition))
+        Keyboard keyboard = Keyboard.current;
+        if (keyboard != null)
         {
-            cameraManager.RotateLeft();
-        }
-        else if (IsPointerInside(rightButton, pointerPosition))
-        {
-            cameraManager.RotateRight();
+            if (keyboard.qKey.wasPressedThisFrame)
+            {
+                cameraManager.RotateLeft();
+            }
+
+            if (keyboard.eKey.wasPressedThisFrame)
+            {
+                cameraManager.RotateRight();
+            }
         }
     }
 

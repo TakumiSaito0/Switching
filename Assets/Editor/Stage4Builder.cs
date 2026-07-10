@@ -55,6 +55,7 @@ public static class Stage4Builder
         boxRb.mass = 0.85f;
         boxRb.linearDamping = 1.5f;
         boxRb.angularDamping = 1.5f;
+        boxRb.constraints = RigidbodyConstraints.FreezePositionX | RigidbodyConstraints.FreezePositionZ | RigidbodyConstraints.FreezeRotation;
 
         GameObject ladder = InstantiatePrefab("Assets/Prefabs/Ladder.prefab", "Ladder_To_CircuitShelf", new Vector3(-4.6f, 2f, -6.05f), Quaternion.identity);
         ladder.transform.localScale = new Vector3(2f, 3.2f, 0.1f);

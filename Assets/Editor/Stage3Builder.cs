@@ -77,6 +77,7 @@ public static class Stage3Builder
         boxRb.mass = 0.8f;
         boxRb.linearDamping = 1.5f;
         boxRb.angularDamping = 1.5f;
+        boxRb.constraints = RigidbodyConstraints.FreezePositionX | RigidbodyConstraints.FreezePositionZ | RigidbodyConstraints.FreezeRotation;
 
         GameObject goal = InstantiatePrefab("Assets/Prefabs/ClearPlace.prefab", "ClearPlace_Goal", new Vector3(8.4f, 4.75f, 3f), Quaternion.identity);
         goal.transform.localScale = new Vector3(1.25f, 1.25f, 1.25f);

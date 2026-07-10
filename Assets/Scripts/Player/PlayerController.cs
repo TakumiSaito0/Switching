@@ -50,10 +50,10 @@ public class PlayerController : MonoBehaviour, PlayerAction.IPlayerActions
     private PlayerAction playerAction;
     private Vector2 moveInput;
     private Rigidbody heldRigidbody;
+    private RigidbodyConstraints heldOriginalConstraints;
     private Rigidbody rb;
     private GameObject circuitPlacementPreview;
     private Material[] circuitPlacementPreviewMaterials;
-    private bool circuitPlacementInputConsumedThisFrame = false;
 
     public bool IsHoldingObject => heldRigidbody != null;
     public int CurrentCircuitCount => currentCircuitCount;
@@ -131,9 +131,7 @@ public class PlayerController : MonoBehaviour, PlayerAction.IPlayerActions
 
     private void Update()
     {
-        circuitPlacementInputConsumedThisFrame = false;
         PlaceCircuit();
-        InteractSwitch();
 
         // Calculate movement relative to the active camera.
         Vector3 move = GetCameraRelativeMove(moveInput);
@@ -229,48 +227,33 @@ public class PlayerController : MonoBehaviour, PlayerAction.IPlayerActions
     }
 
 
-    // Left click: press a switch in front of the player.
-    void InteractSwitch()
+    private bool TryInteractSwitchOrButton()
     {
-        if (isCircuitPlacementMode || circuitPlacementInputConsumedThisFrame)
+        Vector3 boxCenter = transform.position + transform.forward * (interactDistance / 2f) + Vector3.up * 0.5f;
+        Vector3 boxHalfExtents = new Vector3(0.5f, 1.0f, interactDistance / 2f);
+
+        Collider[] colliders = Physics.OverlapBox(boxCenter, boxHalfExtents, transform.rotation);
+        foreach (Collider hit in colliders)
         {
-            return;
-        }
-
-        if (Mouse.current.leftButton.wasPressedThisFrame)
-        {
-            Vector3 boxCenter = transform.position + transform.forward * (interactDistance / 2f) + Vector3.up * 0.5f;
-            Vector3 boxHalfExtents = new Vector3(0.5f, 1.0f, interactDistance / 2f);
-
-            bool switchFound = false;
-
-            Collider[] colliders = Physics.OverlapBox(boxCenter, boxHalfExtents, transform.rotation);
-            foreach (Collider hit in colliders)
+            ElevatorButton elevatorButton = hit.GetComponent<ElevatorButton>();
+            if (elevatorButton != null)
             {
-                ElevatorButton elevatorButton = hit.GetComponent<ElevatorButton>();
-                if (elevatorButton != null)
-                {
-                    elevatorButton.PressButton();
-                    Debug.Log("Elevator button pressed: " + hit.gameObject.name);
-                    switchFound = true;
-                    break;
-                }
-
-                SwitchNode switchNode = hit.GetComponent<SwitchNode>();
-                if (switchNode != null)
-                {
-                    switchNode.ToggleSwitch();
-                    Debug.Log("Switch toggled: " + hit.gameObject.name);
-                    switchFound = true;
-                    break;
-                }
+                elevatorButton.PressButton();
+                Debug.Log("Elevator button pressed: " + hit.gameObject.name);
+                return true;
             }
 
-            if (!switchFound)
+            SwitchNode switchNode = hit.GetComponent<SwitchNode>();
+            if (switchNode != null)
             {
-                Debug.Log("No switch found in front of the player.");
+                switchNode.ToggleSwitch();
+                Debug.Log("Switch toggled: " + hit.gameObject.name);
+                return true;
             }
         }
+
+        Debug.Log("No interactable found in front of the player.");
+        return false;
     }
 
     // Right click: place or remove a circuit wire on the ground.
@@ -288,7 +271,6 @@ public class PlayerController : MonoBehaviour, PlayerAction.IPlayerActions
             if (Mouse.current.rightButton.wasPressedThisFrame)
             {
                 EnterCircuitPlacementMode();
-                circuitPlacementInputConsumedThisFrame = true;
             }
 
             return;
@@ -297,7 +279,6 @@ public class PlayerController : MonoBehaviour, PlayerAction.IPlayerActions
         if (ShouldCancelCircuitPlacement())
         {
             ExitCircuitPlacementMode();
-            circuitPlacementInputConsumedThisFrame = true;
             return;
         }
 
@@ -306,7 +287,6 @@ public class PlayerController : MonoBehaviour, PlayerAction.IPlayerActions
         if (Mouse.current.rightButton.wasPressedThisFrame)
         {
             BeginCircuitPlacementStroke();
-            circuitPlacementInputConsumedThisFrame = true;
         }
 
         if (!Mouse.current.rightButton.isPressed)
@@ -877,22 +857,26 @@ public class PlayerController : MonoBehaviour, PlayerAction.IPlayerActions
 
         if (context.started)
         {
-            if (heldRigidbody == null)
-            {
-                TryGrab();
-            }
-            else
+            if (heldRigidbody != null)
             {
                 Release();
+                return;
             }
+
+            if (TryGrab())
+            {
+                return;
+            }
+
+            TryInteractSwitchOrButton();
         }
     }
 
-    private void TryGrab()
+    private bool TryGrab()
     {
         if (heldRigidbody != null)
         {
-            return;
+            return false;
         }
 
         var origin = transform.position;
@@ -900,16 +884,18 @@ public class PlayerController : MonoBehaviour, PlayerAction.IPlayerActions
 
         if (!Physics.Raycast(origin, direction, out var hit, grabDistance, grabbableLayers))
         {
-            return;
+            return false;
         }
 
         var target = hit.rigidbody;
-        if (target == null)
+        if (target == null || !target.CompareTag("Box"))
         {
-            return;
+            return false;
         }
 
         heldRigidbody = target;
+        heldOriginalConstraints = heldRigidbody.constraints;
+        heldRigidbody.constraints = RigidbodyConstraints.None;
         heldRigidbody.isKinematic = true;
         heldRigidbody.transform.SetParent(grabPoint, true);
         heldRigidbody.transform.localPosition = Vector3.zero;
@@ -920,6 +906,8 @@ public class PlayerController : MonoBehaviour, PlayerAction.IPlayerActions
         {
             StopClimbing();
         }
+
+        return true;
     }
 
     private void Release()
@@ -940,6 +928,7 @@ public class PlayerController : MonoBehaviour, PlayerAction.IPlayerActions
         }
 
         releasedRigidbody.isKinematic = false;
+        releasedRigidbody.constraints = heldOriginalConstraints;
         releasedRigidbody.linearVelocity = Vector3.zero;
         releasedRigidbody.angularVelocity = Vector3.zero;
         GameSfx.PlayAt("sfx_box_drop_lowpoly", releasedRigidbody.position);
@@ -998,7 +987,7 @@ public class PlayerController : MonoBehaviour, PlayerAction.IPlayerActions
 
         if (groundHit.collider.GetComponentInParent<CircuitNode>() != null
             || groundHit.collider.CompareTag("Player")
-            || !IsPlaceableSurface(groundHit.collider)
+            || !IsBoxReleaseSurface(groundHit.collider)
             || IsBlockedPlacementSurface(groundHit.collider))
         {
             return false;
@@ -1025,6 +1014,18 @@ public class PlayerController : MonoBehaviour, PlayerAction.IPlayerActions
 
         safePosition = safeCenter;
         return true;
+    }
+
+    private bool IsBoxReleaseSurface(Collider surfaceCollider)
+    {
+        if (IsPlaceableSurface(surfaceCollider))
+        {
+            return true;
+        }
+
+        return surfaceCollider != null
+            && surfaceCollider.GetComponentInParent<Elevator>() != null
+            && surfaceCollider.name.Contains("Floor");
     }
 
     // Called by external gimmicks such as ladders to enter climbing state.
