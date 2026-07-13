@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -52,6 +53,8 @@ public class PlayerController : MonoBehaviour, PlayerAction.IPlayerActions
     private Rigidbody heldRigidbody;
     private RigidbodyConstraints heldOriginalConstraints;
     private Rigidbody rb;
+    private PlayerCharacterAnimator characterAnimator;
+    private readonly HashSet<Collider> groundContacts = new HashSet<Collider>();
     private GameObject circuitPlacementPreview;
     private Material[] circuitPlacementPreviewMaterials;
 
@@ -86,6 +89,7 @@ public class PlayerController : MonoBehaviour, PlayerAction.IPlayerActions
     private void Awake()
     {
         rb = GetComponent<Rigidbody>();
+        characterAnimator = GetComponent<PlayerCharacterAnimator>();
         currentCircuitCount = Mathf.Max(0, startingCircuitCount);
 
         EnsurePlayerAction();
@@ -178,6 +182,7 @@ public class PlayerController : MonoBehaviour, PlayerAction.IPlayerActions
 
                 transform.position += verticalMove + horizontalMove + climbForwardMove;
             }
+            characterAnimator?.UpdateMotion(move.magnitude, true, true, IsHoldingObject);
             return;
         }
 
@@ -192,6 +197,7 @@ public class PlayerController : MonoBehaviour, PlayerAction.IPlayerActions
         }
 
         transform.position += move * moveSpeed * Time.deltaTime;
+        characterAnimator?.UpdateMotion(move.magnitude, isGrounded, false, IsHoldingObject);
     }
 
     private Vector3 GetCameraRelativeMove(Vector2 input)
@@ -396,6 +402,7 @@ public class PlayerController : MonoBehaviour, PlayerAction.IPlayerActions
                 AddCircuits(1);
                 lastTargetGridPos = target.GridPosition;
                 GameSfx.PlayAt("sfx_circuit_remove_lowpoly", target.GridPosition);
+                characterAnimator?.PlayAction();
                 Invoke(nameof(RefreshAllCircuits), 0.05f);
             }
 
@@ -412,6 +419,7 @@ public class PlayerController : MonoBehaviour, PlayerAction.IPlayerActions
         currentCircuitCount--;
         lastTargetGridPos = target.GridPosition;
         GameSfx.PlayAt("sfx_circuit_place", target.PlacePosition);
+        characterAnimator?.PlayAction();
         Invoke(nameof(RefreshAllCircuits), 0.05f);
         UpdateCircuitPlacementPreview();
     }
@@ -857,6 +865,7 @@ public class PlayerController : MonoBehaviour, PlayerAction.IPlayerActions
 
         if (context.started)
         {
+            characterAnimator?.PlayAction();
             if (heldRigidbody != null)
             {
                 Release();
@@ -1054,28 +1063,53 @@ public class PlayerController : MonoBehaviour, PlayerAction.IPlayerActions
         }
     }
 
-    // Track whether the player is touching the ground.
+    // Track walkable contacts by their surface normal. Upper-floor colliders are often
+    // untagged children, so relying only on the GameObject's Ground tag leaves the
+    // character permanently in the falling animation after climbing a ladder.
     private void OnCollisionEnter(Collision collision)
     {
-        if (collision.gameObject.CompareTag("Ground"))
-        {
-            isGrounded = true;
-        }
+        UpdateGroundContact(collision);
     }
 
     private void OnCollisionStay(Collision collision)
     {
-        if (collision.gameObject.CompareTag("Ground"))
-        {
-            isGrounded = true;
-        }
+        UpdateGroundContact(collision);
     }
 
     private void OnCollisionExit(Collision collision)
     {
-        if (collision.gameObject.CompareTag("Ground"))
+        if (collision.collider != null)
         {
-            isGrounded = false;
+            groundContacts.Remove(collision.collider);
         }
+
+        isGrounded = groundContacts.Count > 0;
+    }
+
+    private void UpdateGroundContact(Collision collision)
+    {
+        if (collision.collider == null) return;
+
+        bool hasWalkableSurface = false;
+        foreach (ContactPoint contact in collision.contacts)
+        {
+            // Accept flat ground and ordinary ramps, but not walls or ladder sides.
+            if (contact.normal.y >= 0.45f)
+            {
+                hasWalkableSurface = true;
+                break;
+            }
+        }
+
+        if (hasWalkableSurface)
+        {
+            groundContacts.Add(collision.collider);
+        }
+        else
+        {
+            groundContacts.Remove(collision.collider);
+        }
+
+        isGrounded = groundContacts.Count > 0;
     }
 }

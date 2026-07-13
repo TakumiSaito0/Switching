@@ -1,0 +1,75 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!319 &31900000
+AvatarMask:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: Male41UpperBody
+  m_Mask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+  m_Elements:
+  - m_Path: 
+    m_Weight: 1
+  - m_Path: Boots_2_Brown
+    m_Weight: 0
+  - m_Path: Clothes_Male_13_CV3_White
+    m_Weight: 0
+  - m_Path: Face
+    m_Weight: 0
+  - m_Path: Hand_1_White_Left
+    m_Weight: 0
+  - m_Path: Hand_1_White_Right
+    m_Weight: 0
+  - m_Path: Rig_Pelvis
+    m_Weight: 0
+  - m_Path: Rig_Pelvis/Rig_Spine
+    m_Weight: 1
+  - m_Path: Rig_Pelvis/Rig_Spine/Rig_Chest
+    m_Weight: 1
+  - m_Path: Rig_Pelvis/Rig_Spine/Rig_Chest/Rig_Collarbone_Left
+    m_Weight: 1
+  - m_Path: Rig_Pelvis/Rig_Spine/Rig_Chest/Rig_Collarbone_Left/Rig_Upper_Arm_Left
+    m_Weight: 1
+  - m_Path: Rig_Pelvis/Rig_Spine/Rig_Chest/Rig_Collarbone_Left/Rig_Upper_Arm_Left/Rig_Lower_Arm_Left
+    m_Weight: 1
+  - m_Path: Rig_Pelvis/Rig_Spine/Rig_Chest/Rig_Collarbone_Left/Rig_Upper_Arm_Left/Rig_Lower_Arm_Left/Rig_Hand_Left
+    m_Weight: 1
+  - m_Path: Rig_Pelvis/Rig_Spine/Rig_Chest/Rig_Collarbone_Left/Rig_Upper_Arm_Left/Rig_Lower_Arm_Left/Rig_Hand_Left/Left_Hand_Dummy
+    m_Weight: 1
+  - m_Path: Rig_Pelvis/Rig_Spine/Rig_Chest/Rig_Collarbone_Right
+    m_Weight: 1
+  - m_Path: Rig_Pelvis/Rig_Spine/Rig_Chest/Rig_Collarbone_Right/Rig_Upper_Arm_Right
+    m_Weight: 1
+  - m_Path: Rig_Pelvis/Rig_Spine/Rig_Chest/Rig_Collarbone_Right/Rig_Upper_Arm_Right/Rig_Lower_Arm_Right
+    m_Weight: 1
+  - m_Path: Rig_Pelvis/Rig_Spine/Rig_Chest/Rig_Collarbone_Right/Rig_Upper_Arm_Right/Rig_Lower_Arm_Right/Rig_Hand_Right
+    m_Weight: 1
+  - m_Path: Rig_Pelvis/Rig_Spine/Rig_Chest/Rig_Collarbone_Right/Rig_Upper_Arm_Right/Rig_Lower_Arm_Right/Rig_Hand_Right/Right_Hand_Dummy
+    m_Weight: 1
+  - m_Path: Rig_Pelvis/Rig_Spine/Rig_Chest/Rig_Neck
+    m_Weight: 1
+  - m_Path: Rig_Pelvis/Rig_Spine/Rig_Chest/Rig_Neck/Rig_Head
+    m_Weight: 1
+  - m_Path: Rig_Pelvis/Rig_Spine/Rig_Chest/Rig_Neck/Rig_Head/Head_Dummy
+    m_Weight: 1
+  - m_Path: Rig_Pelvis/Rig_Spine/Rig_Chest/Rig_Neck/Rig_Head/Head_Dummy/Hat_5_1
+    m_Weight: 1
+  - m_Path: Rig_Pelvis/Rig_Spine/Rig_Chest/Rig_Neck/Rig_Head/Head_Dummy/Glasses_1_1
+    m_Weight: 1
+  - m_Path: Rig_Pelvis/Rig_Spine/Rig_Chest/Rig_Neck/Rig_Head/Head_Dummy/Male_Hair_2_White
+    m_Weight: 1
+  - m_Path: Rig_Pelvis/Rig_Spine/Back_Dummy
+    m_Weight: 1
+  - m_Path: Rig_Pelvis/Rig_Upper_Leg_Left
+    m_Weight: 0
+  - m_Path: Rig_Pelvis/Rig_Upper_Leg_Left/Rig_Lower_Leg_Left
+    m_Weight: 0
+  - m_Path: Rig_Pelvis/Rig_Upper_Leg_Left/Rig_Lower_Leg_Left/Rig_Foot_Left
+    m_Weight: 0
+  - m_Path: Rig_Pelvis/Rig_Upper_Leg_Right
+    m_Weight: 0
+  - m_Path: Rig_Pelvis/Rig_Upper_Leg_Right/Rig_Lower_Leg_Right
+    m_Weight: 0
+  - m_Path: Rig_Pelvis/Rig_Upper_Leg_Right/Rig_Lower_Leg_Right/Rig_Foot_Right
+    m_Weight: 0
