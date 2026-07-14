@@ -16,6 +16,9 @@ public class PlayerController : MonoBehaviour, PlayerAction.IPlayerActions
     private float grabDistance = 2f;
 
     [SerializeField]
+    private float grabRadius = 0.45f;
+
+    [SerializeField]
     private float releaseDistance = 1.15f;
 
     [SerializeField]
@@ -23,6 +26,9 @@ public class PlayerController : MonoBehaviour, PlayerAction.IPlayerActions
 
     [SerializeField]
     private Transform grabPoint;
+
+    [SerializeField]
+    private float grabHeightOffset = -0.3f;
 
     [Header("Action Settings")]
     public float interactDistance = 2.0f;
@@ -98,7 +104,7 @@ public class PlayerController : MonoBehaviour, PlayerAction.IPlayerActions
         {
             var grabPointObject = new GameObject("GrabPoint");
             grabPointObject.transform.SetParent(transform, false);
-            grabPointObject.transform.localPosition = new Vector3(0f, 0f, 1f);
+            grabPointObject.transform.localPosition = new Vector3(0f, grabHeightOffset, 1f);
             grabPoint = grabPointObject.transform;
         }
     }
@@ -888,22 +894,39 @@ public class PlayerController : MonoBehaviour, PlayerAction.IPlayerActions
             return false;
         }
 
-        var origin = transform.position;
-        var direction = transform.forward;
+        Vector3 origin = transform.position + Vector3.up * 0.15f;
+        Vector3 direction = transform.forward;
+        RaycastHit[] hits = Physics.SphereCastAll(
+            origin,
+            grabRadius,
+            direction,
+            grabDistance,
+            grabbableLayers,
+            QueryTriggerInteraction.Ignore);
 
-        if (!Physics.Raycast(origin, direction, out var hit, grabDistance, grabbableLayers))
+        Rigidbody target = null;
+        float nearestDistance = float.PositiveInfinity;
+
+        foreach (RaycastHit hit in hits)
         {
-            return false;
+            Rigidbody candidate = hit.rigidbody;
+            if (candidate == null || !candidate.CompareTag("Box") || hit.distance >= nearestDistance)
+            {
+                continue;
+            }
+
+            target = candidate;
+            nearestDistance = hit.distance;
         }
 
-        var target = hit.rigidbody;
-        if (target == null || !target.CompareTag("Box"))
+        if (target == null)
         {
             return false;
         }
 
         heldRigidbody = target;
         heldOriginalConstraints = heldRigidbody.constraints;
+        SetCollisionWithPlayer(heldRigidbody, false);
         heldRigidbody.constraints = RigidbodyConstraints.None;
         heldRigidbody.isKinematic = true;
         heldRigidbody.transform.SetParent(grabPoint, true);
@@ -940,8 +963,31 @@ public class PlayerController : MonoBehaviour, PlayerAction.IPlayerActions
         releasedRigidbody.constraints = heldOriginalConstraints;
         releasedRigidbody.linearVelocity = Vector3.zero;
         releasedRigidbody.angularVelocity = Vector3.zero;
+        SetCollisionWithPlayer(releasedRigidbody, true);
         GameSfx.PlayAt("sfx_box_drop_lowpoly", releasedRigidbody.position);
         heldRigidbody = null;
+    }
+
+    private void SetCollisionWithPlayer(Rigidbody boxRigidbody, bool enabled)
+    {
+        if (boxRigidbody == null)
+        {
+            return;
+        }
+
+        Collider[] playerColliders = GetComponentsInChildren<Collider>(true);
+        Collider[] boxColliders = boxRigidbody.GetComponentsInChildren<Collider>(true);
+
+        foreach (Collider playerCollider in playerColliders)
+        {
+            foreach (Collider boxCollider in boxColliders)
+            {
+                if (playerCollider != null && boxCollider != null && playerCollider != boxCollider)
+                {
+                    Physics.IgnoreCollision(playerCollider, boxCollider, !enabled);
+                }
+            }
+        }
     }
 
     private bool MoveHeldObjectToSafeReleasePosition(Rigidbody targetRigidbody)

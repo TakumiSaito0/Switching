@@ -49,13 +49,7 @@ public static class Stage4Builder
         SetSerializedObjectReference(respawn, "respawnPoint", respawnPoint.transform);
         SetSerializedFloat(respawn, "fallY", -8f);
 
-        GameObject box = CreateCube("CarryBox", new Vector3(-7.2f, 0.75f, -4.1f), new Vector3(1f, 1f, 1f), palette.Box);
-        box.tag = "Box";
-        Rigidbody boxRb = box.AddComponent<Rigidbody>();
-        boxRb.mass = 0.85f;
-        boxRb.linearDamping = 1.5f;
-        boxRb.angularDamping = 1.5f;
-        boxRb.constraints = RigidbodyConstraints.FreezePositionX | RigidbodyConstraints.FreezePositionZ | RigidbodyConstraints.FreezeRotation;
+        InstantiatePrefab("Assets/Prefabs/Box.prefab", "CarryBox", new Vector3(-7.2f, 0.27f, -4.1f), Quaternion.identity);
 
         GameObject ladder = InstantiatePrefab("Assets/Prefabs/Ladder.prefab", "Ladder_To_CircuitShelf", new Vector3(-4.6f, 2f, -6.05f), Quaternion.identity);
         ladder.transform.localScale = new Vector3(2f, 3.2f, 0.1f);

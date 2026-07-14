@@ -71,13 +71,7 @@ public static class Stage3Builder
         door.transform.localScale = new Vector3(2.2f, 3.2f, 1.1f);
         SetSerializedFloat(door.GetComponent<DoorNode>(), "connectRadius", 1.25f);
 
-        GameObject box = CreateCube("CarryBox", new Vector3(-6.5f, 0.75f, -5.2f), new Vector3(1f, 1f, 1f), palette.Box);
-        box.tag = "Box";
-        Rigidbody boxRb = box.AddComponent<Rigidbody>();
-        boxRb.mass = 0.8f;
-        boxRb.linearDamping = 1.5f;
-        boxRb.angularDamping = 1.5f;
-        boxRb.constraints = RigidbodyConstraints.FreezePositionX | RigidbodyConstraints.FreezePositionZ | RigidbodyConstraints.FreezeRotation;
+        InstantiatePrefab("Assets/Prefabs/Box.prefab", "CarryBox", new Vector3(-6.5f, 0.27f, -5.2f), Quaternion.identity);
 
         GameObject goal = InstantiatePrefab("Assets/Prefabs/ClearPlace.prefab", "ClearPlace_Goal", new Vector3(8.4f, 4.75f, 3f), Quaternion.identity);
         goal.transform.localScale = new Vector3(1.25f, 1.25f, 1.25f);
