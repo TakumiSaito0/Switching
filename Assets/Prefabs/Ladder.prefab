@@ -31,7 +31,7 @@ Transform:
   m_LocalScale: {x: 4, y: 3.9137473, z: 0.1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 6816181668378680692}
+  - {fileID: 4921817892782966600}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!65 &3208126894482172309
@@ -67,7 +67,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7b62dd38693fdc34da3f6b22a933a04c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Ladder
---- !u!1001 &4366499112617969941
+--- !u!1001 &2757000771116929833
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
@@ -136,8 +136,8 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 54302c88c2d02ef469f11f6a01f80d55, type: 3}
---- !u!4 &6816181668378680692 stripped
+--- !u!4 &4921817892782966600 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 7065895838129230945, guid: 54302c88c2d02ef469f11f6a01f80d55, type: 3}
-  m_PrefabInstance: {fileID: 4366499112617969941}
+  m_PrefabInstance: {fileID: 2757000771116929833}
   m_PrefabAsset: {fileID: 0}

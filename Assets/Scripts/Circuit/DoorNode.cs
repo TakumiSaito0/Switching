@@ -10,12 +10,10 @@ public class DoorNode : CircuitNode
     [SerializeField] private float openSpeed = 180f;
     [SerializeField] private bool disableColliderWhenOpen = false;
 
-    [Header("Visual")]
-    [SerializeField] private Color poweredColor = Color.cyan;
-    [SerializeField] private Color unpoweredColor = Color.red;
-
     [Header("Connection Marker")]
     [SerializeField] private bool showConnectionMarker = true;
+    [SerializeField] private bool worldAlignedConnectionMarker = true;
+    [SerializeField] private float worldAlignedConnectionMarkerYaw = 0f;
     [SerializeField] private Vector3 connectionMarkerLocalOffset = new Vector3(0f, -0.43f, -1f);
     [SerializeField] private Color connectionMarkerColor = new Color(1f, 0.82f, 0.12f, 1f);
     [SerializeField] private Color connectionMarkerPulseColor = new Color(0.1f, 1f, 1f, 1f);
@@ -27,8 +25,8 @@ public class DoorNode : CircuitNode
     private Quaternion closedRotation;
     private float currentAngle;
     private float targetAngle;
-    private Renderer doorRenderer;
     private GameObject runtimeDoorBodyObject;
+    private bool detachedDoorBody;
     private bool hasInitializedPowerState;
     private Transform connectionMarkerRoot;
     private Material connectionMarkerMaterial;
@@ -45,7 +43,16 @@ public class DoorNode : CircuitNode
             blockingCollider = doorBody.GetComponent<Collider>();
         }
 
-        doorRenderer = doorBody.GetComponent<Renderer>();
+        // A rotating child under a non-uniformly scaled transform is sheared by
+        // the parent's scale, which makes the door appear to change size while
+        // opening. Keep its current world transform, but move it beside the door
+        // root so the opening rotation is applied without that scale distortion.
+        if (doorBody.parent == transform)
+        {
+            doorBody.SetParent(transform.parent, true);
+            detachedDoorBody = true;
+        }
+
         closedPosition = doorBody.position;
         closedRotation = doorBody.rotation;
         CreateConnectionMarker();
@@ -60,6 +67,18 @@ public class DoorNode : CircuitNode
     protected override void OnDestroy()
     {
         base.OnDestroy();
+
+        if (runtimeDoorBodyObject == null && detachedDoorBody && doorBody != null)
+        {
+            if (Application.isPlaying)
+            {
+                Destroy(doorBody.gameObject);
+            }
+            else
+            {
+                DestroyImmediate(doorBody.gameObject);
+            }
+        }
 
         if (runtimeDoorBodyObject != null)
         {
@@ -114,11 +133,6 @@ public class DoorNode : CircuitNode
         if (disableColliderWhenOpen && blockingCollider != null)
         {
             blockingCollider.enabled = !powered;
-        }
-
-        if (doorRenderer != null)
-        {
-            doorRenderer.material.color = powered ? poweredColor : unpoweredColor;
         }
 
         if (hasInitializedPowerState)
@@ -183,7 +197,7 @@ public class DoorNode : CircuitNode
         GameObject root = new GameObject("CircuitPlacementMarker");
         root.layer = gameObject.layer;
         root.transform.SetParent(transform.parent, true);
-        root.transform.SetPositionAndRotation(GetConnectionMarkerPosition(), transform.rotation);
+        root.transform.SetPositionAndRotation(GetConnectionMarkerPosition(), GetConnectionMarkerRotation());
         root.transform.localScale = Vector3.one;
         connectionMarkerRoot = root.transform;
 
@@ -238,13 +252,13 @@ public class DoorNode : CircuitNode
         Color markerColor = Color.Lerp(connectionMarkerColor, connectionMarkerPulseColor, pulse);
         SetMarkerMaterialColor(markerColor);
         float markerScale = Mathf.Lerp(0.92f, 1.08f, pulse);
-        connectionMarkerRoot.SetPositionAndRotation(GetConnectionMarkerPosition(), transform.rotation);
+        connectionMarkerRoot.SetPositionAndRotation(GetConnectionMarkerPosition(), GetConnectionMarkerRotation());
         connectionMarkerRoot.localScale = new Vector3(markerScale, 1f, markerScale);
     }
 
     private Vector3 GetConnectionMarkerPosition()
     {
-        Vector3 markerPosition = transform.position + transform.rotation * connectionMarkerLocalOffset;
+        Vector3 markerPosition = transform.position + GetConnectionMarkerRotation() * connectionMarkerLocalOffset;
         Ray groundRay = new Ray(markerPosition + Vector3.up * connectionMarkerGroundSearchHeight, Vector3.down);
         RaycastHit[] hits = Physics.RaycastAll(
             groundRay,
@@ -276,6 +290,13 @@ public class DoorNode : CircuitNode
         }
 
         return markerPosition;
+    }
+
+    private Quaternion GetConnectionMarkerRotation()
+    {
+        return worldAlignedConnectionMarker
+            ? Quaternion.Euler(0f, worldAlignedConnectionMarkerYaw, 0f)
+            : transform.rotation;
     }
 
     private void SetMarkerMaterialColor(Color color)
