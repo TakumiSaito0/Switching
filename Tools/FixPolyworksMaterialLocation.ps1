@@ -40,5 +40,50 @@ foreach ($file in $files) {
 
 Write-Host "Scanned: $($files.Count) FBX meta files"
 Write-Host "Changed: $changed legacy material settings"
+
+function Repair-MaterialRemap {
+    param(
+        [string]$ModelMetaRelativePath,
+        [string]$MaterialMetaRelativePath,
+        [string]$MaterialName
+    )
+
+    $modelMetaPath = Join-Path $polyworksRoot $ModelMetaRelativePath
+    $materialMetaPath = Join-Path $polyworksRoot $MaterialMetaRelativePath
+    if (-not (Test-Path -LiteralPath $modelMetaPath -PathType Leaf) -or
+        -not (Test-Path -LiteralPath $materialMetaPath -PathType Leaf)) {
+        throw "Required Polyworks material remap files could not be found."
+    }
+
+    $guidMatch = Select-String -LiteralPath $materialMetaPath -Pattern "^guid: ([0-9a-f]{32})$" | Select-Object -First 1
+    if ($null -eq $guidMatch) {
+        throw "Material GUID could not be read: $materialMetaPath"
+    }
+
+    $materialGuid = $guidMatch.Matches[0].Groups[1].Value
+    $content = [System.IO.File]::ReadAllText($modelMetaPath)
+    $escapedName = [System.Text.RegularExpressions.Regex]::Escape($MaterialName)
+    $pattern = "(?ms)(name:\s*$escapedName\s*\r?\n\s*second:\s*\{fileID:\s*2100000,\s*guid:\s*)[0-9a-f]{32}"
+    if (-not [System.Text.RegularExpressions.Regex]::IsMatch($content, $pattern)) {
+        throw "Material remap entry could not be found: $ModelMetaRelativePath"
+    }
+
+    $updated = [System.Text.RegularExpressions.Regex]::Replace($content, $pattern, "`${1}$materialGuid", 1)
+    if ($updated -ne $content) {
+        [System.IO.File]::WriteAllText($modelMetaPath, $updated, [System.Text.UTF8Encoding]::new($false))
+    }
+}
+
+$sciFiRoot = "Meshes\MaterialsOnly\SciFi"
+Repair-MaterialRemap `
+    "$sciFiRoot\SciFi_Modular_Wall_Section_Grey_01.fbx.meta" `
+    "$sciFiRoot\Materials\Grey28.mat.meta" `
+    "Grey28"
+Repair-MaterialRemap `
+    "$sciFiRoot\SciFi_Modular_Wall_Section_White_01.fbx.meta" `
+    "$sciFiRoot\Materials\White01.mat.meta" `
+    "White01"
+
+Write-Host "Repaired: Stage 4 and Stage 5 wall material remaps"
 Write-Host "Done. Open Unity and wait for the one-time reimport to finish."
 

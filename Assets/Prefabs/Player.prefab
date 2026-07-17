@@ -34,7 +34,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 5775224819673362350}
+  - {fileID: 438972410789779862}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &6779307988000443156
@@ -110,11 +110,13 @@ MonoBehaviour:
   moveSpeed: 5
   climbSpeed: 3
   grabDistance: 2
+  grabRadius: 0.45
   releaseDistance: 1.15
   grabbableLayers:
     serializedVersion: 2
     m_Bits: 4294967295
   grabPoint: {fileID: 0}
+  grabHeightOffset: -0.3
   interactDistance: 1
   placeDistance: 1.2
   placeHeightOffset: 0.5
@@ -151,7 +153,7 @@ MonoBehaviour:
   animators: []
   transitionDuration: 0.12
   actionDuration: 0.55
---- !u!1001 &5779757814175950910
+--- !u!1001 &434562630511418886
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
@@ -224,8 +226,8 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: e7ab56ea0523ab04b99e57d2073ebd04, type: 3}
---- !u!4 &5775224819673362350 stripped
+--- !u!4 &438972410789779862 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4621780133644176, guid: e7ab56ea0523ab04b99e57d2073ebd04, type: 3}
-  m_PrefabInstance: {fileID: 5779757814175950910}
+  m_PrefabInstance: {fileID: 434562630511418886}
   m_PrefabAsset: {fileID: 0}
