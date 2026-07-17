@@ -102,25 +102,32 @@ public class CircuitNode : MonoBehaviour
             return false;
         }
 
-        float verticalDistance = Mathf.Abs(transform.position.y - otherNode.transform.position.y);
+        Vector3 connectionPosition = GetConnectionPosition();
+        Vector3 otherConnectionPosition = otherNode.GetConnectionPosition();
+        float verticalDistance = Mathf.Abs(connectionPosition.y - otherConnectionPosition.y);
         if (verticalDistance > maxVerticalConnectionDistance)
         {
             return false;
         }
 
         Vector3 thisGridPosition = new Vector3(
-            Mathf.Round(transform.position.x),
+            Mathf.Round(connectionPosition.x),
             0f,
-            Mathf.Round(transform.position.z)
+            Mathf.Round(connectionPosition.z)
         );
         Vector3 otherGridPosition = new Vector3(
-            Mathf.Round(otherNode.transform.position.x),
+            Mathf.Round(otherConnectionPosition.x),
             0f,
-            Mathf.Round(otherNode.transform.position.z)
+            Mathf.Round(otherConnectionPosition.z)
         );
         Vector3 offset = otherGridPosition - thisGridPosition;
 
         float effectiveDistance = Mathf.Min(connectRadius, maxGridConnectionDistance);
         return offset.sqrMagnitude <= effectiveDistance * effectiveDistance;
+    }
+
+    public virtual Vector3 GetConnectionPosition()
+    {
+        return transform.position;
     }
 }

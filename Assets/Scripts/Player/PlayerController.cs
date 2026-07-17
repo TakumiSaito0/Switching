@@ -166,7 +166,7 @@ public class PlayerController : MonoBehaviour, PlayerAction.IPlayerActions
             {
                 // Step down when the player is grounded and moves away from the ladder.
                 Vector3 stepDownMove = new Vector3(0, -climbSpeed * 1.5f, 0) * Time.deltaTime;
-                transform.position += stepDownMove + horizontalMove;
+                MovePlayer(stepDownMove + horizontalMove);
             }
             else
             {
@@ -186,7 +186,7 @@ public class PlayerController : MonoBehaviour, PlayerAction.IPlayerActions
                     }
                 }
 
-                transform.position += verticalMove + horizontalMove + climbForwardMove;
+                MovePlayer(verticalMove + horizontalMove + climbForwardMove);
             }
             characterAnimator?.UpdateMotion(move.magnitude, true, true, IsHoldingObject);
             return;
@@ -202,8 +202,32 @@ public class PlayerController : MonoBehaviour, PlayerAction.IPlayerActions
             }
         }
 
-        transform.position += move * moveSpeed * Time.deltaTime;
+        MovePlayer(move * moveSpeed * Time.deltaTime);
         characterAnimator?.UpdateMotion(move.magnitude, isGrounded, false, IsHoldingObject);
+    }
+
+    private void MovePlayer(Vector3 displacement)
+    {
+        if (rb != null)
+        {
+            float distance = displacement.magnitude;
+            if (distance <= Mathf.Epsilon)
+            {
+                return;
+            }
+
+            Vector3 direction = displacement / distance;
+            const float collisionSkin = 0.02f;
+            if (rb.SweepTest(direction, out RaycastHit hit, distance + collisionSkin, QueryTriggerInteraction.Ignore))
+            {
+                distance = Mathf.Max(0f, hit.distance - collisionSkin);
+            }
+
+            rb.MovePosition(rb.position + direction * distance);
+            return;
+        }
+
+        transform.position += displacement;
     }
 
     private Vector3 GetCameraRelativeMove(Vector2 input)

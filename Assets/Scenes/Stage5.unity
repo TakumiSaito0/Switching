@@ -945,6 +945,7 @@ MonoBehaviour:
   distance: 30
   tiltAngle: 40
   rotationSpeed: 480
+  invertRotationControls: 1
 --- !u!81 &786408422
 AudioListener:
   m_ObjectHideFlags: 0
@@ -1186,7 +1187,7 @@ Rigidbody:
   m_IsKinematic: 0
   m_Interpolate: 0
   m_Constraints: 122
-  m_CollisionDetection: 0
+  m_CollisionDetection: 2
 --- !u!23 &953451110
 MeshRenderer:
   m_ObjectHideFlags: 0

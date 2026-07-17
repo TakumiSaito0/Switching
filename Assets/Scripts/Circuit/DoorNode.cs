@@ -299,6 +299,11 @@ public class DoorNode : CircuitNode
             : transform.rotation;
     }
 
+    public override Vector3 GetConnectionPosition()
+    {
+        return transform.position + GetConnectionMarkerRotation() * connectionMarkerLocalOffset;
+    }
+
     private void SetMarkerMaterialColor(Color color)
     {
         if (connectionMarkerMaterial == null)

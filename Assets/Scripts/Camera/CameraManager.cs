@@ -9,6 +9,7 @@ public class CameraManager : MonoBehaviour
     [SerializeField] private float distance = 10f;
     [SerializeField] private float tiltAngle = 60f;
     [SerializeField] private float rotationSpeed = 720f;
+    [SerializeField] private bool invertRotationControls = false;
 
     private float currentYaw;
     private float targetYaw;
@@ -67,11 +68,11 @@ public class CameraManager : MonoBehaviour
 
     public void RotateLeft()
     {
-        targetYaw += 90f;
+        targetYaw += invertRotationControls ? -90f : 90f;
     }
 
     public void RotateRight()
     {
-        targetYaw -= 90f;
+        targetYaw += invertRotationControls ? 90f : -90f;
     }
 }
