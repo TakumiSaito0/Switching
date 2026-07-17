@@ -1553,6 +1553,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 547796651}
     m_Modifications:
+    - target: {fileID: 2706713363094522980, guid: f4605f39df88fa8449d799db15258632, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 3880697334238197515, guid: f4605f39df88fa8449d799db15258632, type: 3}
       propertyPath: m_LocalScale.x
       value: 0.49999982
@@ -1631,6 +1635,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 401618543}
     m_Modifications:
+    - target: {fileID: 2706713363094522980, guid: f4605f39df88fa8449d799db15258632, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 3880697334238197515, guid: f4605f39df88fa8449d799db15258632, type: 3}
       propertyPath: m_LocalScale.x
       value: 0.5
@@ -1709,6 +1717,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 266779637}
     m_Modifications:
+    - target: {fileID: 2706713363094522980, guid: f4605f39df88fa8449d799db15258632, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 3880697334238197515, guid: f4605f39df88fa8449d799db15258632, type: 3}
       propertyPath: m_LocalScale.x
       value: 0.5
@@ -2287,6 +2299,7 @@ MonoBehaviour:
   distance: 30
   tiltAngle: 40
   rotationSpeed: 480
+  invertRotationControls: 0
 --- !u!1001 &1832292847
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2368,6 +2381,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1717533664}
     m_Modifications:
+    - target: {fileID: 2706713363094522980, guid: f4605f39df88fa8449d799db15258632, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 3880697334238197515, guid: f4605f39df88fa8449d799db15258632, type: 3}
       propertyPath: m_LocalScale.x
       value: 0.5
@@ -2446,6 +2463,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1943665218}
     m_Modifications:
+    - target: {fileID: 2706713363094522980, guid: f4605f39df88fa8449d799db15258632, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 3880697334238197515, guid: f4605f39df88fa8449d799db15258632, type: 3}
       propertyPath: m_LocalScale.x
       value: 0.5
@@ -2720,6 +2741,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 86092977}
     m_Modifications:
+    - target: {fileID: 2706713363094522980, guid: f4605f39df88fa8449d799db15258632, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 3880697334238197515, guid: f4605f39df88fa8449d799db15258632, type: 3}
       propertyPath: m_LocalScale.x
       value: 0.49999982
