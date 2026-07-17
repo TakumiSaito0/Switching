@@ -14,11 +14,11 @@ public static class StageWallVisualSetup
     private static readonly string[] WallVisualPaths =
     {
         null,
-        "Assets/Off Axis Studios/Polyworks/Prefabs/MaterialsOnly/Prototype/Blocks - Green/Proto_Building_Block_Wall_01.prefab",
-        "Assets/Off Axis Studios/Polyworks/Prefabs/MaterialsOnly/Prototype/Blocks - Yellow/Proto_Building_Block_Wall_01.prefab",
-        "Assets/Off Axis Studios/Polyworks/Prefabs/MaterialsOnly/Industrial/Prop_Industrial_Temporary_Lab_Office_Wall_01.prefab",
-        "Assets/Off Axis Studios/Polyworks/Prefabs/MaterialsOnly/SciFi/SciFi_Modular_Wall_Section_Grey_01.prefab",
-        "Assets/Off Axis Studios/Polyworks/Prefabs/MaterialsOnly/SciFi/SciFi_Modular_Wall_Section_White_01.prefab"
+        "Assets/PrivateFolder/Off Axis Studios/Polyworks/Prefabs/MaterialsOnly/Prototype/Blocks - Green/Proto_Building_Block_Wall_01.prefab",
+        "Assets/PrivateFolder/Off Axis Studios/Polyworks/Prefabs/MaterialsOnly/Prototype/Blocks - Yellow/Proto_Building_Block_Wall_01.prefab",
+        "Assets/PrivateFolder/Off Axis Studios/Polyworks/Prefabs/MaterialsOnly/Industrial/Prop_Industrial_Temporary_Lab_Office_Wall_01.prefab",
+        "Assets/PrivateFolder/Off Axis Studios/Polyworks/Prefabs/MaterialsOnly/SciFi/SciFi_Modular_Wall_Section_Grey_01.prefab",
+        "Assets/PrivateFolder/Off Axis Studios/Polyworks/Prefabs/MaterialsOnly/SciFi/SciFi_Modular_Wall_Section_White_01.prefab"
     };
 
     static StageWallVisualSetup() => EditorApplication.delayCall += ApplyOnce;

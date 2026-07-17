@@ -7,7 +7,8 @@ using UnityEngine;
 public static class Male41PlayerSetup
 {
     private const string PlayerPath = "Assets/Prefabs/Player.prefab";
-    private const string CharacterPath = "Assets/Low Poly Characters Mega Pack/Assets/Prefabs/PreMade/Male/Male_41.prefab";
+    private const string PackPath = "Assets/PrivateFolder/Low Poly Characters Mega Pack";
+    private const string CharacterPath = PackPath + "/Assets/Prefabs/PreMade/Male/Male_41.prefab";
     private const string OutputFolder = "Assets/Generated/Player";
     private const string ControllerPath = OutputFolder + "/Male41Player.controller";
     private const string CarryMaskPath = OutputFolder + "/Male41UpperBody.mask";
@@ -77,18 +78,18 @@ public static class Male41PlayerSetup
         AssetDatabase.DeleteAsset(ControllerPath);
         AnimatorController controller = AnimatorController.CreateAnimatorControllerAtPath(ControllerPath);
         AnimatorStateMachine machine = controller.layers[0].stateMachine;
-        AddState(machine, "Idle", Clip("Assets/Low Poly Characters Mega Pack/Assets/Animations/Unarmed/Idle_1.FBX"), true, 1f);
-        AddState(machine, "Walk", Clip("Assets/Low Poly Characters Mega Pack/Assets/Animations/Unarmed/Walk.FBX"), true, 1.25f);
-        AddState(machine, "Air", Clip("Assets/Low Poly Characters Mega Pack/Assets/Animations/02_Jump/Relaxed/Fall_NoRootMotion.FBX"), true, 1f);
-        AddState(machine, "Climb", Clip("Assets/Low Poly Characters Mega Pack/Assets/Animations/Unarmed/Walk.FBX"), true, 0.8f);
-        AddState(machine, "Action", Clip("Assets/Low Poly Characters Mega Pack/Assets/Animations/Unarmed/Attack_1.FBX"), false, 1f);
+        AddState(machine, "Idle", Clip(PackPath + "/Assets/Animations/Unarmed/Idle_1.FBX"), true, 1f);
+        AddState(machine, "Walk", Clip(PackPath + "/Assets/Animations/Unarmed/Walk.FBX"), true, 1.25f);
+        AddState(machine, "Air", Clip(PackPath + "/Assets/Animations/02_Jump/Relaxed/Fall_NoRootMotion.FBX"), true, 1f);
+        AddState(machine, "Climb", Clip(PackPath + "/Assets/Animations/Unarmed/Walk.FBX"), true, 0.8f);
+        AddState(machine, "Action", Clip(PackPath + "/Assets/Animations/Unarmed/Attack_1.FBX"), false, 1f);
         machine.defaultState = machine.states.First(x => x.state.name == "Idle").state;
 
         AvatarMask carryMask = BuildUpperBodyMask(characterPrefab);
         AnimatorStateMachine carryMachine = new AnimatorStateMachine { name = "Carry Layer" };
         AssetDatabase.AddObjectToAsset(carryMachine, controller);
         AnimatorState carry = carryMachine.AddState("Carry");
-        carry.motion = Clip("Assets/Low Poly Characters Mega Pack/Assets/Animations/Bow/Attack_Idle.FBX");
+        carry.motion = Clip(PackPath + "/Assets/Animations/Bow/Attack_Idle.FBX");
         carryMachine.defaultState = carry;
         controller.AddLayer(new AnimatorControllerLayer
         {

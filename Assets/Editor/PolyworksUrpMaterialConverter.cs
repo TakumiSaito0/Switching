@@ -5,7 +5,7 @@ using UnityEngine.Rendering;
 [InitializeOnLoad]
 public static class PolyworksUrpMaterialConverter
 {
-    private const string RootPath = "Assets/Off Axis Studios/Polyworks";
+    private const string RootPath = "Assets/PrivateFolder/Off Axis Studios/Polyworks";
     private const string SessionKey = "Polyworks_URP_Conversion_v1";
 
     static PolyworksUrpMaterialConverter() => EditorApplication.delayCall += ConvertOnce;

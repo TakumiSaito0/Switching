@@ -5,7 +5,7 @@ using UnityEngine;
 [InitializeOnLoad]
 public static class LowPolyCharactersUrpMaterialConverter
 {
-    private const string PackPath = "Assets/Low Poly Characters Mega Pack";
+    private const string PackPath = "Assets/PrivateFolder/Low Poly Characters Mega Pack";
     private const string ConversionKey = "LowPolyCharactersMegaPack_URP_Conversion_v1";
 
     static LowPolyCharactersUrpMaterialConverter()

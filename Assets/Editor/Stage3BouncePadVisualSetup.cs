@@ -8,7 +8,7 @@ using UnityEngine.SceneManagement;
 public static class Stage3BouncePadVisualSetup
 {
     private const string ScenePath = "Assets/Scenes/Stage3.unity";
-    private const string VisualPath = "Assets/Off Axis Studios/Polyworks/Prefabs/MaterialsOnly/Prototype/Proto_Warp_Pad_01.prefab";
+    private const string VisualPath = "Assets/PrivateFolder/Off Axis Studios/Polyworks/Prefabs/MaterialsOnly/Prototype/Proto_Warp_Pad_01.prefab";
     private const string VisualName = "Polyworks_Warp_Pad_Visual";
     private const string SessionKey = "Stage3BouncePadVisualSetup_WarpPad_v1";
 
