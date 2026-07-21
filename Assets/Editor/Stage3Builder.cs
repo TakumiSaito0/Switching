@@ -124,6 +124,7 @@ public static class Stage3Builder
         Light light = lightObject.AddComponent<Light>();
         light.type = LightType.Directional;
         light.intensity = 1.2f;
+        light.shadows = LightShadows.None;
         lightObject.transform.rotation = Quaternion.Euler(50f, -30f, 0f);
         RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Skybox;
         RenderSettings.ambientIntensity = 0.9f;

@@ -1793,7 +1793,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3917840652297467514, guid: f514ef3697969d1448f240ede26d83b0, type: 3}
       propertyPath: connectionMarkerLocalOffset.z
-      value: 0.7
+      value: 0.8
       objectReference: {fileID: 0}
     - target: {fileID: 3917840652297467514, guid: f514ef3697969d1448f240ede26d83b0, type: 3}
       propertyPath: worldAlignedConnectionMarkerYaw
