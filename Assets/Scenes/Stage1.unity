@@ -519,6 +519,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Polyworks_Wall_Visual
       objectReference: {fileID: 0}
+    - target: {fileID: 3674977051274401716, guid: 90e5d48fb18403f44aa3b14841da1e91, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 4056604740780035342, guid: 90e5d48fb18403f44aa3b14841da1e91, type: 3}
       propertyPath: m_LocalScale.x
       value: 0.5
@@ -1664,6 +1668,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1219574671}
     m_Modifications:
+    - target: {fileID: 2882541635936450145, guid: 90e5d48fb18403f44aa3b14841da1e91, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 3674977051274401716, guid: 90e5d48fb18403f44aa3b14841da1e91, type: 3}
       propertyPath: m_Name
       value: Polyworks_Wall_Visual
