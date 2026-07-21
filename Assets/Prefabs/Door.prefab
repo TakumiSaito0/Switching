@@ -31,7 +31,7 @@ Transform:
   m_LocalScale: {x: 4.21377, y: 4, z: 2}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 411774482695594925}
+  - {fileID: 7004698465990813842}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!65 &7301247221742559257
@@ -75,7 +75,7 @@ MonoBehaviour:
   maxGridConnectionDistance: 2
   maxVerticalConnectionDistance: 2
   connectOnlyToWires: 0
-  doorBody: {fileID: 411774482695594925}
+  doorBody: {fileID: 7004698465990813842}
   blockingCollider: {fileID: 7301247221742559257}
   hingeLocalOffset: {x: -2, y: 0, z: 0}
   openAngle: -90
@@ -90,7 +90,7 @@ MonoBehaviour:
   connectionMarkerPulseSpeed: 2.2
   connectionMarkerGroundOffset: 0.04
   connectionMarkerGroundSearchHeight: 3
---- !u!1001 &4181047280815474099
+--- !u!1001 &6810932234902670988
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
@@ -163,8 +163,8 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 3ecd420dca0d66a46b591ae2eafed151, type: 3}
---- !u!4 &411774482695594925 stripped
+--- !u!4 &7004698465990813842 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4589443913197725214, guid: 3ecd420dca0d66a46b591ae2eafed151, type: 3}
-  m_PrefabInstance: {fileID: 4181047280815474099}
+  m_PrefabInstance: {fileID: 6810932234902670988}
   m_PrefabAsset: {fileID: 0}

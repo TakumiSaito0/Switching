@@ -12,6 +12,7 @@ public static class Stage3Builder
 {
     private const string ScenePath = "Assets/Scenes/Stage3.unity";
     private const string MaterialFolder = "Assets/Generated/Stage3";
+    private static readonly Color BackgroundColor = new Color(0.788f, 0.294f, 0.173f, 1f);
 
     [MenuItem("Tools/Stages/Build Stage 3")]
     public static void BuildStage3()
@@ -133,7 +134,8 @@ public static class Stage3Builder
         GameObject cameraObject = new GameObject("Main Camera");
         cameraObject.tag = "MainCamera";
         Camera camera = cameraObject.AddComponent<Camera>();
-        camera.clearFlags = CameraClearFlags.Skybox;
+        camera.clearFlags = CameraClearFlags.SolidColor;
+        camera.backgroundColor = BackgroundColor;
         camera.nearClipPlane = 0.1f;
         camera.farClipPlane = 1000f;
         cameraObject.AddComponent<AudioListener>();
