@@ -1,22 +1,10 @@
 using UnityEditor;
 using UnityEngine;
 
-[InitializeOnLoad]
 public static class LadderVisualSetup
 {
     private const string LadderPath = "Assets/Prefabs/Ladder.prefab";
     private const string VisualPath = "Assets/Prefabs/Proto_Ladder_Wooden_02_Atlased.prefab";
-    private const string SessionKey = "LadderVisualSetup_Wooden02_v2";
-
-    static LadderVisualSetup() => EditorApplication.delayCall += SetupOnce;
-
-    private static void SetupOnce()
-    {
-        if (SessionState.GetBool(SessionKey, false)) return;
-        SessionState.SetBool(SessionKey, true);
-        Setup();
-    }
-
     [MenuItem("Tools/Ladder/Use Wooden Ladder Visual")]
     public static void Setup()
     {

@@ -3,7 +3,6 @@ using UnityEditor;
 using UnityEditor.Animations;
 using UnityEngine;
 
-[InitializeOnLoad]
 public static class Male41PlayerSetup
 {
     private const string PlayerPath = "Assets/Prefabs/Player.prefab";
@@ -12,17 +11,6 @@ public static class Male41PlayerSetup
     private const string OutputFolder = "Assets/Generated/Player";
     private const string ControllerPath = OutputFolder + "/Male41Player.controller";
     private const string CarryMaskPath = OutputFolder + "/Male41UpperBody.mask";
-    private const string SessionKey = "Male41PlayerSetup_v1";
-
-    static Male41PlayerSetup() => EditorApplication.delayCall += SetupOnce;
-
-    private static void SetupOnce()
-    {
-        if (SessionState.GetBool(SessionKey, false)) return;
-        SessionState.SetBool(SessionKey, true);
-        Setup();
-    }
-
     [MenuItem("Tools/Player/Use Male 41 With Animations")]
     public static void Setup()
     {

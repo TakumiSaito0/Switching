@@ -2,25 +2,9 @@ using UnityEditor;
 using UnityEngine;
 
 /// <summary>Converts the Low Poly Characters Mega Pack's built-in-pipeline materials to URP.</summary>
-[InitializeOnLoad]
 public static class LowPolyCharactersUrpMaterialConverter
 {
     private const string PackPath = "Assets/PrivateFolder/Low Poly Characters Mega Pack";
-    private const string ConversionKey = "LowPolyCharactersMegaPack_URP_Conversion_v1";
-
-    static LowPolyCharactersUrpMaterialConverter()
-    {
-        // Imported store assets use the built-in Standard shader and render pink in URP.
-        // Run once after scripts compile; the menu item remains available for re-imports.
-        EditorApplication.delayCall += ConvertOnce;
-    }
-
-    private static void ConvertOnce()
-    {
-        if (SessionState.GetBool(ConversionKey, false)) return;
-        SessionState.SetBool(ConversionKey, true);
-        ConvertMaterials();
-    }
 
     [MenuItem("Tools/Low Poly Characters/Convert Materials to URP")]
     public static void ConvertMaterials()

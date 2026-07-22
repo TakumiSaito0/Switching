@@ -2,20 +2,9 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-[InitializeOnLoad]
 public static class PolyworksUrpMaterialConverter
 {
     private const string RootPath = "Assets/PrivateFolder/Off Axis Studios/Polyworks";
-    private const string SessionKey = "Polyworks_URP_Conversion_v1";
-
-    static PolyworksUrpMaterialConverter() => EditorApplication.delayCall += ConvertOnce;
-
-    private static void ConvertOnce()
-    {
-        if (SessionState.GetBool(SessionKey, false)) return;
-        SessionState.SetBool(SessionKey, true);
-        ConvertMaterials();
-    }
 
     [MenuItem("Tools/Polyworks/Convert All Materials to URP")]
     public static void ConvertMaterials()

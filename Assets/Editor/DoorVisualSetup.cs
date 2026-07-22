@@ -1,24 +1,12 @@
 using UnityEditor;
 using UnityEngine;
 
-[InitializeOnLoad]
 public static class DoorVisualSetup
 {
     private const string DoorPrefabPath = "Assets/Prefabs/Door.prefab";
     private const string VisualPrefabPath = "Assets/PrivateFolder/Off Axis Studios/Polyworks/Prefabs/MaterialsOnly/Dungeon/Prop_Fantasy_Dungeon_Door_Wooden_Metal_01.prefab";
     private const string VisualName = "Polyworks_Wooden_Metal_Hinged_Door";
     private const string PreviousVisualName = "Polyworks_Industrial_Hinged_Door";
-    private const string SessionKey = "DoorVisualSetup_WoodenMetalHinged_v2";
-
-    static DoorVisualSetup() => EditorApplication.delayCall += ApplyOnce;
-
-    private static void ApplyOnce()
-    {
-        if (SessionState.GetBool(SessionKey, false)) return;
-        SessionState.SetBool(SessionKey, true);
-        Apply();
-    }
-
     [MenuItem("Tools/Door/Use Industrial Hinged Door")]
     public static void Apply()
     {
