@@ -2123,8 +2123,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CameraManager
   focus: {fileID: 117846412}
   height: 0
-  distance: 30
-  tiltAngle: 40
+  distance: 15
+  tiltAngle: 60
   rotationSpeed: 480
   invertRotationControls: 0
 --- !u!1001 &1832292847
