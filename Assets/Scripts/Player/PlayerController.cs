@@ -208,25 +208,6 @@ public class PlayerController : MonoBehaviour, PlayerAction.IPlayerActions
 
     private void MovePlayer(Vector3 displacement)
     {
-        if (rb != null)
-        {
-            float distance = displacement.magnitude;
-            if (distance <= Mathf.Epsilon)
-            {
-                return;
-            }
-
-            Vector3 direction = displacement / distance;
-            const float collisionSkin = 0.02f;
-            if (rb.SweepTest(direction, out RaycastHit hit, distance + collisionSkin, QueryTriggerInteraction.Ignore))
-            {
-                distance = Mathf.Max(0f, hit.distance - collisionSkin);
-            }
-
-            rb.MovePosition(rb.position + direction * distance);
-            return;
-        }
-
         transform.position += displacement;
     }
 

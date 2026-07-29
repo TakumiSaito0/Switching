@@ -1077,7 +1077,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3759004164914165801, guid: 590067754b7d2344ab7349b3a9ac7efa, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -4.11
+      value: -4.03
       objectReference: {fileID: 0}
     - target: {fileID: 3759004164914165801, guid: 590067754b7d2344ab7349b3a9ac7efa, type: 3}
       propertyPath: m_LocalRotation.w
@@ -2123,7 +2123,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CameraManager
   focus: {fileID: 117846412}
   height: 0
-  distance: 15
+  distance: 20
   tiltAngle: 60
   rotationSpeed: 480
   invertRotationControls: 0
