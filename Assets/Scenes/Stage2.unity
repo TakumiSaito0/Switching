@@ -2330,6 +2330,10 @@ PrefabInstance:
       value: 1.25
       objectReference: {fileID: 0}
     - target: {fileID: 3917840652297467514, guid: f514ef3697969d1448f240ede26d83b0, type: 3}
+      propertyPath: hingeLocalOffset.x
+      value: 0.05
+      objectReference: {fileID: 0}
+    - target: {fileID: 3917840652297467514, guid: f514ef3697969d1448f240ede26d83b0, type: 3}
       propertyPath: connectionMarkerLocalOffset.x
       value: 0.2
       objectReference: {fileID: 0}
